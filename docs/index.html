@@ -2097,6 +2097,7 @@ function renderProfile(){
         ${unusedCodes.map(c=>`<div style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;margin-bottom:4px">
           <span style="font-family:monospace;font-size:13px;font-weight:700;letter-spacing:1px;flex:1">${c.code}</span>
           <span style="font-size:10px;color:${c.type==='partner'?'#5C6BC0':'var(--tx3)'};font-weight:700">${c.type==='partner'?'PARTNER':'GUEST'}</span>
+          <button onclick="copyInviteLink('${c.code}')" style="background:var(--sf2);border:1px solid var(--bd);border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer">🔗복사</button>
           <button onclick="deleteInviteCode('${c.code}')" style="background:#ffebee;color:#e53935;border:1px solid #ffcdd2;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer">삭제</button>
         </div>`).join('')}
         ${myCodesRaw.filter(c=>c.used).length?`<div style="font-size:11px;color:var(--tx3);margin:8px 0 4px">사용된 코드</div>
@@ -2161,6 +2162,17 @@ function saveKakaoJs(){
   FB.push();
   toast('카카오 JS 키 저장 완료. 새로고침 하면 카카오맵으로 전환됩니다 🗺️');
   setTimeout(()=>{if(confirm('카카오맵을 적용하려면 새로고침이 필요합니다. 지금 새로고침 하시겠습니까?'))location.reload();},1500);
+}
+function copyInviteLink(code){
+  const fbUrl=DB.g('fb_url','https://taste-journey-d3176-default-rtdb.asia-southeast1.firebasedatabase.app');
+  const base=location.origin+location.pathname;
+  const p=new URLSearchParams();
+  if(fbUrl)p.set('fburl',fbUrl);
+  p.set('code',code);
+  const link=base+'?'+p.toString();
+  _copyText(link).then(()=>toast('초대 링크 복사 완료! 🔗')).catch(()=>{
+    prompt('아래 링크를 복사하세요:', link);
+  });
 }
 function genCode(type){
   const code=generateInviteCode(type);
