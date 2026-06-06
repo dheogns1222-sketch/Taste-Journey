@@ -403,13 +403,10 @@ nav{height:var(--nh);background:var(--sf);border-top:1px solid var(--bd);display
       <!-- 3. 음식점 이름 -->
       <div class="form-sec">
         <span class="form-lbl">음식점 이름 <span class="req">*</span></span>
-        <input type="text" id="f-name" placeholder="예) 연남동 파스타집" oninput="markDirty()">
+        <input type="text" id="f-name" placeholder="식당 이름 검색 후 선택" oninput="onNameInput()" autocomplete="off">
+        <div id="name-drop" class="addr-panel hidden" style="margin-top:4px"><div class="addr-hint">🔍 클릭하면 이름 + 주소가 자동 입력됩니다</div><div class="addr-results" id="name-results"></div></div>
       </div>
-      <!-- 4. 대표 메뉴 -->
-      <div class="form-sec">
-        <span class="form-lbl" id="f-menu-lbl">대표 메뉴 / 먹은 음식</span>
-        <input type="text" id="f-menu" placeholder="예) 카르보나라, 감자뇨키" oninput="markDirty()">
-      </div>
+
       <!-- 5. 주소 -->
       <div class="form-sec">
         <span class="form-lbl">주소 <span class="req">*</span></span>
@@ -424,14 +421,7 @@ nav{height:var(--nh);background:var(--sf);border-top:1px solid var(--bd);display
         <input type="text" id="f-addr" placeholder="선택된 주소" readonly style="margin-top:6px;background:var(--sf2)">
         <input type="text" id="f-addr-detail" placeholder="상세 주소 (호수, 층 등 선택)" style="margin-top:6px" oninput="markDirty()">
       </div>
-      <!-- 6. 1인 평균 가격 -->
-      <div class="form-sec">
-        <span class="form-lbl">1인 평균 가격</span>
-        <div class="price-wrap">
-          <input type="text" inputmode="numeric" id="f-price" placeholder="15,000" oninput="onPriceInput(this)">
-          <span class="price-unit">원</span>
-        </div>
-      </div>
+
       <!-- 7. 방문일 (방문완료만) -->
       <div class="form-sec" id="sec-date">
         <span class="form-lbl">방문일</span>
@@ -475,8 +465,8 @@ nav{height:var(--nh);background:var(--sf);border-top:1px solid var(--bd);display
       </div>
       <!-- 11. 후기/방문목적 -->
       <div class="form-sec">
-        <span class="form-lbl" id="f-memo-lbl">후기</span>
-        <textarea id="f-memo" rows="3" placeholder="맛, 분위기, 서비스 등 자유롭게..." style="resize:none" oninput="markDirty()"></textarea>
+        <span class="form-lbl" id="f-memo-lbl">메모</span>
+        <textarea id="f-memo" rows="4" placeholder="맛, 분위기, 서비스, 가고 싶은 이유 등 자유롭게..." style="resize:none" oninput="markDirty()"></textarea>
       </div>
       <!-- 12. 사진 / URL -->
       <div class="form-sec" id="sec-media">
@@ -604,8 +594,9 @@ nav{height:var(--nh);background:var(--sf);border-top:1px solid var(--bd);display
 const C = {
   SK: 'tj2_',
   CATS: [
-    {k:'한식',e:'🍚'},{k:'중식',e:'🥡'},{k:'일식',e:'🍱'},{k:'양식',e:'🍝'},
-    {k:'분식',e:'🥟'},{k:'카페',e:'☕'},{k:'술집',e:'🍺'},{k:'기타',e:'🍴'}
+    {k:'한식',e:'🍚'},{k:'고기집',e:'🥩'},{k:'중식',e:'🥡'},{k:'일식',e:'🍱'},
+    {k:'양식',e:'🍝'},{k:'분식',e:'🥟'},{k:'해산물',e:'🦐'},{k:'카페',e:'☕'},
+    {k:'디저트',e:'🍦'},{k:'술집',e:'🍺'},{k:'패스트푸드',e:'🍟'},{k:'기타',e:'🍴'}
   ],
   STAR_LBL: ['','별로예요','','','','그저그래요','','','','','최고예요!'],
   SPICE_LBL: ['','순한맛','','','','보통 매움','','','','','극한의 매움'],
@@ -735,12 +726,13 @@ function showAuthError(msg){
   if(el){el.textContent=msg;setTimeout(()=>{el.textContent='';},4000);}
   else toast(msg);
 }
-function handleAuth() {
+async function handleAuth() {
   const u = document.getElementById('au').value.trim();
   const p = document.getElementById('ap').value;
   const errEl=document.getElementById('auth-error');
   if(errEl)errEl.textContent='';
   if(!u || !p) { showAuthError('아이디와 비밀번호를 입력해주세요'); return; }
+  if(authTab==='signup'&&FB.url){showSyncStatus('🔄 연동 중...');await FB.pull();}
   const users = getUsers();
   if(authTab==='signup'){
     if(users.find(x=>x.username===u)) { showAuthError('이미 사용 중인 아이디입니다'); return; }
@@ -924,16 +916,19 @@ const MAP = {
       const sx=Math.round(px2-centerPX+W/2);
       const sy=Math.round(py2-centerPY+H/2);
       if(sx<-20||sx>W+20||sy<-20||sy>H+20)continue;
-      const color=p.type==='wish'?'#1565C0':'#D32F2F';
+      const color=p.type==='wish'?'#1976D2':'#E53935';
+      const cx=sx,cy=sy-17;
       ctx.save();
-      ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=6;
+      ctx.shadowColor='rgba(0,0,0,.22)';ctx.shadowBlur=5;ctx.shadowOffsetY=2;
+      ctx.fillStyle='#fff';
+      ctx.beginPath();ctx.arc(cx,cy,12,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.moveTo(cx,sy+1);ctx.lineTo(cx-7,cy+8);ctx.lineTo(cx+7,cy+8);ctx.closePath();ctx.fill();
       ctx.fillStyle=color;
-      ctx.beginPath();ctx.arc(sx,sy-14,9,0,Math.PI*2);ctx.fill();
-      ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx-7,sy-12);ctx.lineTo(sx+7,sy-12);ctx.closePath();ctx.fill();
+      ctx.beginPath();ctx.arc(cx,cy,10,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.moveTo(cx,sy);ctx.lineTo(cx-5.5,cy+7);ctx.lineTo(cx+5.5,cy+7);ctx.closePath();ctx.fill();
       ctx.restore();
-      const cat=C.CATS.find(c=>c.k===p.category);
-      ctx.font='10px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(cat?cat.e:'🍴',sx,sy-14);
+      ctx.fillStyle='rgba(255,255,255,.88)';
+      ctx.beginPath();ctx.arc(cx,cy,3.5,0,Math.PI*2);ctx.fill();
     }
 
     // Attribution
@@ -1107,7 +1102,7 @@ function showPinPopup(id){
   const typeTag=type==='wish'
     ?'<span style="color:#1565C0;font-weight:700">📌 방문예정</span>'
     :'<span style="color:#2E7D32;font-weight:700">✅ 방문완료</span>';
-  const ratingStr=p.rating?' · ★'+p.rating+'/10':'';
+  const ratingStr=p.rating?' · ★'+p.rating+'/5':'';
   const spiceStr=p.spiciness?' · 🌶'+p.spiciness:'';
 
   const caretTop=flipBelow
@@ -1241,6 +1236,42 @@ function onAddrInput(){
   addrTimer=setTimeout(searchFormAddr,600);
 }
 
+let _nameTimer=null;
+function onNameInput(){
+  markDirty();clearTimeout(_nameTimer);
+  const q=(document.getElementById('f-name').value||'').trim();
+  document.getElementById('name-drop').classList.add('hidden');
+  if(q.length<2)return;
+  _nameTimer=setTimeout(()=>searchByName(q),700);
+}
+async function searchByName(q){
+  const panel=document.getElementById('name-drop');
+  const res=document.getElementById('name-results');
+  try{
+    const url='https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&countrycodes=kr&addressdetails=1&namedetails=1&limit=6';
+    const r=await fetch(url);const items=await r.json();
+    if(!items||!items.length){panel.classList.add('hidden');return;}
+    panel._items=items;
+    res.innerHTML=items.map((item,i)=>{
+      const name=(item.namedetails&&item.namedetails.name)||item.display_name.split(',')[0];
+      return '<div class="addr-result" onclick="selectNameResult('+i+')"><strong>'+name+'</strong><br><small style="color:var(--tx3)">'+item.display_name+'</small></div>';
+    }).join('');
+    panel.classList.remove('hidden');
+  }catch(e){panel.classList.add('hidden');}
+}
+function selectNameResult(i){
+  const panel=document.getElementById('name-drop');
+  const item=panel._items&&panel._items[i];if(!item)return;
+  const name=(item.namedetails&&item.namedetails.name)||item.display_name.split(',')[0];
+  const el=document.getElementById('f-name');if(el)el.value=name.length<40?name:'';
+  const a=item.address||{};
+  const parts=[a.road||a.pedestrian,a.quarter||a.neighbourhood||a.suburb,a.city||a.town||a.county].filter(Boolean);
+  const addr=parts.length?parts.join(' '):(item.display_name.split(',').slice(0,2).join(',').trim());
+  const ae=document.getElementById('f-addr');if(ae)ae.value=addr;
+  fLat=parseFloat(item.lat);fLng=parseFloat(item.lon);
+  panel.classList.add('hidden');markDirty();
+  toast('📍 주소가 자동 입력되었습니다');
+}
 async function searchFormAddr(){
   const q=document.getElementById('f-addr-q').value.trim();
   if(!q||q.length<2)return;
@@ -1326,13 +1357,8 @@ function setFormType(t){
   if(wrap)wrap.classList.toggle('hidden',!isV);
   if(prow)prow.classList.toggle('hidden',isV);
   if(lbl)lbl.textContent=isV?'별점':'방문 우선순위';
-  // 메뉴/메모 라벨 변경
-  const menuLbl=document.getElementById('f-menu-lbl');
-  const memoLbl=document.getElementById('f-memo-lbl');
   const memoTA=document.getElementById('f-memo');
-  if(menuLbl)menuLbl.textContent=isV?'대표 메뉴 / 먹은 음식':'대표 메뉴';
-  if(memoLbl)memoLbl.textContent=isV?'후기':'방문 목적';
-  if(memoTA)memoTA.placeholder=isV?'맛, 분위기, 서비스 등 자유롭게...':'왜 가고 싶은지, 먹고 싶은 메뉴 등...';
+  if(memoTA)memoTA.placeholder=isV?'맛, 분위기, 서비스, 재방문 의향 등 자유롭게...':'가고 싶은 이유, 먹고 싶은 메뉴 등 자유롭게...';
   renderPhotoArea();
   markDirty();
 }
@@ -1345,10 +1371,7 @@ function renderCatGrid(){
 
 function setCat(k){fCat=k;markDirty();renderCatGrid();}
 
-const STAR_LABELS=['',
-  '1점 — 다시는 안 가요 😞','2점 — 별로예요 😕','3점 — 그냥 그래요 😐',
-  '4점 — 조금 괜찮아요 🙂','5점 — 보통이에요 😊','6점 — 맛있어요 😄',
-  '7점 — 꽤 맛있어요 😋','8점 — 아주 맛있어요 🤩','9점 — 거의 완벽해요 😍','10점 — 최고예요! 🏆'];
+const STAR_DESC={0.5:'별로예요 😞',1:'그냥 그래요 😕',1.5:'조금 아쉬워요 😐',2:'무난해요 🙂',2.5:'보통이에요 😊',3:'꽤 맛있어요 😄',3.5:'맛있어요 😋',4:'아주 맛있어요 🤩',4.5:'거의 완벽해요 😍',5:'최고예요! 🏆'};
 const SPICE_LABELS=['',
   '1단계 — 거의 안 매워요 🥛','2단계 — 살짝 매워요 😌','3단계 — 약간 매워요 😮',
   '4단계 — 슬슬 매워요 😏','5단계 — 적당히 매워요 💧','6단계 — 꽤 매워요 😅',
@@ -1359,10 +1382,18 @@ function initRatings(){
   const sr=document.getElementById('star-row');
   if(sr&&!sr.dataset.init){
     sr.dataset.init='1';
-    sr.innerHTML=Array.from({length:10},(_,i)=>`<span class="ri" data-n="${i+1}" style="font-size:22px;cursor:pointer;padding:2px 1px;display:inline-block;line-height:1;user-select:none"></span>`).join('');
-    sr.addEventListener('mouseover',e=>{if(e.target.classList.contains('ri'))showStarD(+e.target.dataset.n);});
+    sr.innerHTML=Array.from({length:5},(_,i)=>{
+      const lv=+(i+0.5).toFixed(1), rv=i+1;
+      return '<span class="star-unit" style="position:relative;display:inline-block;width:34px;height:34px;cursor:pointer">'
+        +'<span style="position:absolute;top:0;left:0;right:0;text-align:center;font-size:30px;line-height:34px;color:var(--bd);user-select:none;pointer-events:none">★</span>'
+        +'<span class="s-fill" style="position:absolute;top:0;left:0;font-size:30px;line-height:34px;color:#C48A4A;overflow:hidden;width:0%;user-select:none;pointer-events:none;white-space:nowrap">★</span>'
+        +'<span class="sh" data-n="'+lv+'" style="position:absolute;left:0;top:0;width:50%;height:100%;z-index:1;cursor:pointer"></span>'
+        +'<span class="sh" data-n="'+rv+'" style="position:absolute;right:0;top:0;width:50%;height:100%;z-index:1;cursor:pointer"></span>'
+        +'</span>';
+    }).join('');
+    sr.addEventListener('mouseover',e=>{const sh=e.target.closest&&e.target.closest('.sh');if(sh)showStarD(+sh.dataset.n);});
     sr.addEventListener('mouseleave',()=>showStarD(fStar));
-    sr.addEventListener('click',e=>{if(e.target.classList.contains('ri')){fStar=+e.target.dataset.n;showStarD(fStar);markDirty();}});
+    sr.addEventListener('click',e=>{const sh=e.target.closest&&e.target.closest('.sh');if(sh){fStar=+sh.dataset.n;showStarD(fStar);markDirty();}});
   }
   const sp=document.getElementById('spice-row');
   if(sp&&!sp.dataset.init){
@@ -1374,13 +1405,14 @@ function initRatings(){
   }
 }
 function showStarD(v){
-  document.querySelectorAll('#star-row .ri').forEach((el,i)=>{
-    const on=(i+1)<=v;
-    el.style.color=on?'#C48A4A':'var(--bd)';
-    el.textContent=on?'★':'☆';
+  document.querySelectorAll('#star-row .star-unit').forEach((el,i)=>{
+    const fill=el.querySelector('.s-fill'); if(!fill)return;
+    if(v>=i+1)fill.style.width='100%';
+    else if(v>=i+0.5)fill.style.width='50%';
+    else fill.style.width='0%';
   });
   const lbl=document.getElementById('star-lbl');
-  if(lbl)lbl.textContent=v?`${v}/10 · ${STAR_LABELS[v]}`:'선택 안 함';
+  if(lbl)lbl.textContent=v?`${v}/5 · ${STAR_DESC[v]||''}`:'선택 안 함';
 }
 function showSpiceD(v){
   document.querySelectorAll('#spice-row .ri').forEach((el,i)=>{
@@ -1484,10 +1516,9 @@ function openAddModal(coords,wishMode){
   formPhotos=[]; mainPhotoIdx=0;
 
   // Reset fields
-  ['f-name','f-menu','f-addr-q','f-addr','f-addr-detail','f-memo','f-url'].forEach(id=>{
+  ['f-name','f-addr-q','f-addr','f-addr-detail','f-memo','f-url'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
-  document.getElementById('f-price').value='';
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('addr-panel').classList.add('hidden');
   document.getElementById('modal-add-title').textContent='맛집 추가';
@@ -1518,7 +1549,7 @@ function openEditModal(id){
   document.getElementById('f-addr').value=p.address||'';
   document.getElementById('f-addr-q').value='';
   document.getElementById('f-addr-detail').value=p.addressDetail||'';
-  document.getElementById('f-price').value=p.price?p.price.toLocaleString():'';
+
   document.getElementById('f-date').value=p.visitDate||'';
   document.getElementById('f-memo').value=p.memo||'';
   document.getElementById('f-url').value=(p.photoUrls&&p.photoUrls[0])||p.restaurantUrl||'';
@@ -1578,13 +1609,11 @@ function doSave(){
     type:fType,
     category:fCat,
     name,
-    menu:document.getElementById('f-menu').value.trim(),
     address:addr,
     addressDetail:document.getElementById('f-addr-detail').value.trim(),
     zipNo:fZip,
     lat:fLat||MAP.lat,
     lng:fLng||MAP.lng,
-    price:getPriceRaw(),
     visitDate:fType==='visited'?document.getElementById('f-date').value:'',
     rating:fType==='visited'?fStar:0,
     spiciness:fSpice,
@@ -1665,7 +1694,8 @@ function cardHTML(p){
   const coverData=p.photos&&p.photos[p.mainPhotoIdx||0]||p.photos&&p.photos[0];
   const coverUrl=p.photoUrls&&p.photoUrls[0];
   const cover=coverData||coverUrl;
-  const stars=p.rating?'★'.repeat(Math.min(p.rating,10)):'';
+  const fullS=p.rating?Math.floor(p.rating):0,halfS=p.rating&&p.rating%1>=0.5?1:0;
+const stars=p.rating?'★'.repeat(fullS)+(halfS?'½':'')+'☆'.repeat(Math.max(0,5-fullS-halfS)):'';
   const price=p.price?`💰 ${p.price.toLocaleString()}원`:'';
   const spice=p.spiciness?`🌶${p.spiciness}`:'';
   const creator=getUsers().find(u=>u.id===p.createdBy);
@@ -2361,6 +2391,9 @@ function initPWA(){
 
 /* INIT */
 async function startApp(){
+  const _pl=getPlaces();let _mg=false;
+  _pl.forEach(p=>{if(p.rating>5){p.rating=Math.round(p.rating/2*2)/2;_mg=true;}});
+  if(_mg)savePlaces(_pl);
   document.getElementById('auth').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   // Firebase에서 최신 데이터 pull
@@ -2390,6 +2423,7 @@ async function startApp(){
 })();
 
 document.addEventListener('click',e=>{
+  if(!e.target.closest('#f-name')&&!e.target.closest('#name-drop')){const nd=document.getElementById('name-drop');if(nd)nd.classList.add('hidden');}
   if(!e.target.closest('.map-search-bar')){const d=document.getElementById('map-drop');if(d)d.classList.add('hidden');}
 });
 </script>
