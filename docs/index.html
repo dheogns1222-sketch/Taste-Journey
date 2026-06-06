@@ -58,7 +58,7 @@ a{color:var(--pr)}
 header{height:var(--hh);background:var(--pr);color:#fff;display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0;box-shadow:0 2px 10px var(--sh)}
 .h-logo-wrap{flex:1}
 .h-logo{font-size:20px;font-weight:800;letter-spacing:-.3px}
-.h-couple{font-size:11px;color:rgba(255,255,255,.75);margin-top:-1px}
+.h-couple{font-size:11px;color:rgba(255,255,255,.75);margin-top:-1px;padding-left:26px}
 .h-btn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;background:rgba(255,255,255,.15);transition:.15s;flex-shrink:0}
 .h-btn:hover{background:rgba(255,255,255,.3)}
 main{flex:1;overflow:hidden;position:relative}
@@ -88,7 +88,7 @@ nav{height:var(--nh);background:var(--sf);border-top:1px solid var(--bd);display
 .map-legend{display:inline-flex;align-items:center;gap:10px;padding:5px 10px;background:var(--sf);border:1px solid var(--bd);border-radius:20px;font-size:11px;font-weight:600;flex-shrink:0}
 .legend-row{display:flex;align-items:center;gap:4px;color:var(--tx2)}
 .legend-dot{width:10px;height:10px;border-radius:50%}
-#pin-popup{position:absolute;z-index:20;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:0 8px 28px var(--sh);animation:pinPopUp .18s ease;width:288px;max-width:calc(100% - 16px)}
+#pin-popup{position:absolute;z-index:9999;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:0 8px 28px var(--sh);animation:pinPopUp .18s ease;width:288px;max-width:calc(100% - 16px)}
 .share-opt-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px 8px;border-radius:12px;background:var(--sf);border:1px solid var(--bd);font-size:12px;font-weight:700;color:var(--tx2);cursor:pointer;transition:.15s}
 .share-opt-btn:active{background:var(--sf2);transform:scale(.96)}
 @keyframes pinPopUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -1692,10 +1692,15 @@ function starsHTML(rating,size){
 function spiceHTML(spiciness,size){
   size=size||13;
   if(!spiciness)return'';
-  let h='<span style="display:inline-flex;align-items:center;gap:1px">';
+  const SCLR=['','#FFB300','#FF9800','#FF8C00','#FF7043','#F57C00','#EF6C00','#E53935','#D32F2F','#C62828','#B71C1C'];
+  const bar=Math.ceil(size*0.5);
+  let h='<span style="display:inline-flex;align-items:flex-end;gap:1px;vertical-align:middle">';
   for(let i=1;i<=10;i++){
     const on=i<=spiciness;
-    h+='<span style="font-size:'+size+'px;'+(on?'opacity:1':'opacity:0.2;filter:grayscale(1) brightness(3)')+'">🌶</span>';
+    h+='<span style="display:inline-flex;flex-direction:column;align-items:center;gap:0">'
+      +'<span style="font-size:'+size+'px;line-height:1;filter:'+(on?'drop-shadow(0 0 2px '+SCLR[i]+') saturate(3)':'grayscale(1) opacity(0.18)')+'">🌶️</span>'
+      +'<span style="width:'+bar+'px;height:2px;border-radius:1px;background:'+(on?SCLR[i]:'transparent')+'"></span>'
+      +'</span>';
   }
   return h+'</span>';
 }
@@ -2385,7 +2390,11 @@ function _buildShareCanvas(p){
   ctx.fillStyle='#7A5540';ctx.font='13px -apple-system,system-ui,sans-serif';
   if(p.address){
     const addr=(p.address||'').trim().split(/\s+/).slice(0,5).join(' ');
-    ctx.fillText('📍 '+addr,tx,y,txR-tx);
+    // 이름 이모지 너비만큼 들여쓰기 (이름 폰트로 측정 후 복원)
+    ctx.save();ctx.font='bold 26px -apple-system,system-ui,sans-serif';
+    const eiW=cat?Math.min(Math.max(ctx.measureText(cat.e+' ').width,24),40):0;
+    ctx.restore();ctx.font='13px -apple-system,system-ui,sans-serif';
+    ctx.fillText('📍 '+addr,tx+eiW,y,txR-tx-eiW);
   } else {
     ctx.fillText(p.category,tx,y,txR-tx);
   }
