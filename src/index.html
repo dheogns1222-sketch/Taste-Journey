@@ -294,14 +294,7 @@ nav{height:var(--nh);background:var(--sf);border-top:1px solid var(--bd);display
     <div id="auth-error" style="color:#e53935;font-size:12px;font-weight:600;text-align:center;min-height:18px;margin:-4px 0 2px;padding:0 4px"></div>
     <button class="auth-btn" onclick="handleStep()" id="auth-submit">로그인</button>
   </div>
-  <div class="sync-bar" title="두 기기가 같은 코드를 사용해야 데이터가 공유됩니다">
-    <span style="font-size:14px">🔗</span>
-    <input id="fb-url-input" type="text" placeholder="연동 코드 입력 (선택)" autocomplete="off">
-    <button onclick="setSyncUrl()">연결</button>
-  </div>
-  <div id="sync-help" style="font-size:10px;color:var(--tx3);text-align:center;margin-top:4px;display:none">
-    연동 코드가 설정되었습니다 ✅
-  </div>
+
 
 </div>
 
@@ -644,12 +637,12 @@ function generateInviteCode(type){
   return code;
 }
 
-function useInviteCode(raw){
+function useInviteCode(raw,forcedUserId=null){
   const code=raw.trim().toUpperCase();
   const codes=getInviteCodes();
   const idx=codes.findIndex(c=>c.code===code&&!c.used);
   if(idx<0)return null;
-  codes[idx].used=true;codes[idx].usedAt=new Date().toISOString();codes[idx].usedBy=ME?ME.id:null;
+  codes[idx].used=true;codes[idx].usedAt=new Date().toISOString();codes[idx].usedBy=forcedUserId||(ME?ME.id:null);
   saveInviteCodes(codes);
   return codes[idx].type;
 }
@@ -673,7 +666,7 @@ function canInvitePartner(){return ME&&ME.role==='OWNER';}
    FIREBASE SYNC
 ═══════════════════════════════════════════════ */
 const FB = {
-  get url(){return DB.g('fb_url','');},
+  get url(){return DB.g('fb_url','https://taste-journey-d3176-default-rtdb.asia-southeast1.firebasedatabase.app');},
   _busy:false,
   _pollTimer:null,
 
@@ -698,6 +691,7 @@ const FB = {
       if(!d)return false;
       if(d.users&&Array.isArray(d.users))DB.s('users',d.users);
       if(d.places&&Array.isArray(d.places))DB.s('places',d.places);
+      if(d.invite_codes&&Array.isArray(d.invite_codes))DB.s('invite_codes',d.invite_codes);
       return true;
     }catch(e){return false;}
   },
@@ -835,14 +829,14 @@ async function handleAuth() {
   if(!u || !p) { showAuthError('아이디와 비밀번호를 입력해주세요'); return; }
   const users = getUsers();
   if(authTab==='signup'){
-    const fbUrl=DB.g('fb_url','');
-    if(fbUrl){showSyncStatus('🔄 연동 중...');await FB.pull();}
-    const codeType=useInviteCode(_pendingInviteCode);
-    if(!codeType){showAuthError('초대 코드 오류. 처음부터 다시 시도해주세요');return;}
+    if(FB.url){showSyncStatus('🔄 연동 중...');await FB.pull();}
     const freshUsers=getUsers();
     if(freshUsers.find(x=>x.username===u)){showAuthError('이미 사용 중인 아이디입니다');return;}
+    const newId=Date.now().toString();
+    const codeType=useInviteCode(_pendingInviteCode,newId);
+    if(!codeType){showAuthError('초대 코드 오류. 처음부터 다시 시도해주세요');return;}
     const role=codeType==='partner'?'PARTNER':'GUEST';
-    const nu={id:Date.now().toString(),username:u,password:hash(p),role,nickname:u,avatar:role==='PARTNER'?'🐻':'👤',createdAt:new Date().toISOString()};
+    const nu={id:newId,username:u,password:hash(p),role,nickname:u,avatar:role==='PARTNER'?'🐻':'👤',createdAt:new Date().toISOString()};
     freshUsers.push(nu);saveUsers(freshUsers);ME=nu;
     toast(role==='PARTNER'?'파트너 계정이 생성되었습니다 🐻':'게스트 계정이 생성되었습니다 👤');
   } else {
@@ -2545,8 +2539,11 @@ function deleteUser(uid){
   const users=getUsers();
   const u=users.find(x=>x.id===uid);
   if(!u||u.role==='OWNER'){toast('OWNER 계정은 삭제할 수 없습니다');return;}
-  if(!confirm(`"${u.username}" 계정을 삭제하시겠습니까?\n해당 계정의 데이터는 유지됩니다.`))return;
+  if(!confirm(`"${u.username}" 계정을 삭제하시겠습니까?`))return;
+  const codes=getInviteCodes();
+  saveInviteCodes(codes.filter(c=>c.usedBy!==uid));
   saveUsers(users.filter(x=>x.id!==uid));
+  FB.push();
   toast(`${u.username} 계정을 삭제했습니다`);
   openUsersModal();
 }
@@ -2794,8 +2791,7 @@ async function startApp(){
     if(invEl)invEl.value=codeParam;
     switchTab('signup');
   }
-  const existingUrl=DB.g('fb_url','');
-  if(existingUrl){const inp=document.getElementById('fb-url-input');if(inp)inp.value=existingUrl;}
+  // Firebase URL은 하드코딩으로 자동 연동됨
   const sid=DB.g('sid');
   if(sid){const u=getUsers().find(x=>x.id===sid);if(u){ME=u;startApp();return;}}
 })();
