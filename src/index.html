@@ -2607,21 +2607,26 @@ function timeAgo(iso){
   if(d<60)return'방금';if(d<3600)return`${Math.floor(d/60)}분 전`;
   if(d<86400)return`${Math.floor(d/3600)}시간 전`;return`${Math.floor(d/86400)}일 전`;
 }
+
 let _toastTimer;
-function toast(msg){
-  const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
-  clearTimeout(_toastTimer);_toastTimer=setTimeout(()=>el.classList.remove('show'),3000);
+function toast(msg,dur=3000){
+  const el=document.getElementById('toast');
+  if(!el)return;
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(_toastTimer);_toastTimer=setTimeout(()=>el.classList.remove('show'),dur);
 }
 
 function updateHeader(){
+  if(!ME)return;
   const users=getUsers();
   const others=users.filter(u=>u.id!==ME.id);
-  document.getElementById('h-couple').textContent=others.length?`❤️ ${ME.username} & ${others[0].username}`:'';
+  const partner=others.find(u=>u.role==='PARTNER'||u.role==='OWNER');
+  const name=partner?`❤️ ${ME.nickname||ME.username} & ${partner.nickname||partner.username}`:'';
+  const el=document.getElementById('h-couple');if(el)el.textContent=name;
 }
 
-/* PWA */
 function initPWA(){
-  const manifest={name:'Taste Journey',short_name:'TJ',start_url:'.',display:'standalone',background_color:'#F6F1EB',theme_color:'#6B4226'};
+  const manifest={name:'Taste Journey',short_name:'TJ',start_url:'.',display:'standalone',background_color:'#1A1208',theme_color:'#C48A4A'};
   const ml=document.createElement('link');ml.rel='manifest';
   ml.href='data:application/manifest+json,'+encodeURIComponent(JSON.stringify(manifest));
   document.head.appendChild(ml);
@@ -2631,35 +2636,20 @@ function initPWA(){
   }
 }
 
-/* INIT */
 async function startApp(){
   const _pl=getPlaces();let _mg=false;
   _pl.forEach(p=>{if(p.rating>5){p.rating=Math.round(p.rating/2*2)/2;_mg=true;}});
   if(_mg)savePlaces(_pl);
   document.getElementById('auth').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  // Firebase에서 최신 데이터 pull
-  if(FB.url){
-    showSyncStatus('🔄 데이터 불러오는 중...');
-    await FB.pull();
-    FB.startPoll();
-  }
-  updateHeader();
-  MAP.init();
-  navTo('map');
-  initPWA();
+  if(FB.url){showSyncStatus('🔄 데이터 불러오는 중...');await FB.pull();FB.startPoll();}
+  updateHeader();MAP.init();navTo('map');initPWA();
 }
 
-// 로그인 화면에 기존 연동 코드 표시
 (function init(){
   switchTab('login');
   const existingUrl=DB.g('fb_url','');
-  if(existingUrl){
-    const inp=document.getElementById('fb-url-input');
-    if(inp)inp.value=existingUrl;
-    const help=document.getElementById('sync-help');
-    if(help)help.style.display='block';
-  }
+  if(existingUrl){const inp=document.getElementById('sync-url');if(inp)inp.value=existingUrl;}
   const sid=DB.g('sid');
   if(sid){const u=getUsers().find(x=>x.id===sid);if(u){ME=u;startApp();return;}}
 })();

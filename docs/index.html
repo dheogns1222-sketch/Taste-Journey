@@ -2605,4 +2605,59 @@ function timeAgo(iso){
   if(!iso)return'';
   const d=Math.round((Date.now()-new Date(iso))/1000);
   if(d<60)return'방금';if(d<3600)return`${Math.floor(d/60)}분 전`;
-  if(d<86400)return`${Math.floor(d/3600)}시간 전`;return`${
+  if(d<86400)return`${Math.floor(d/3600)}시간 전`;return`${Math.floor(d/86400)}일 전`;
+}
+
+let _toastTimer;
+function toast(msg,dur=3000){
+  const el=document.getElementById('toast');
+  if(!el)return;
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(_toastTimer);_toastTimer=setTimeout(()=>el.classList.remove('show'),dur);
+}
+
+function updateHeader(){
+  if(!ME)return;
+  const users=getUsers();
+  const others=users.filter(u=>u.id!==ME.id);
+  const partner=others.find(u=>u.role==='PARTNER'||u.role==='OWNER');
+  const name=partner?`❤️ ${ME.nickname||ME.username} & ${partner.nickname||partner.username}`:'';
+  const el=document.getElementById('h-couple');if(el)el.textContent=name;
+}
+
+function initPWA(){
+  const manifest={name:'Taste Journey',short_name:'TJ',start_url:'.',display:'standalone',background_color:'#1A1208',theme_color:'#C48A4A'};
+  const ml=document.createElement('link');ml.rel='manifest';
+  ml.href='data:application/manifest+json,'+encodeURIComponent(JSON.stringify(manifest));
+  document.head.appendChild(ml);
+  if('serviceWorker' in navigator){
+    const sw=`self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));});`;
+    navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'text/javascript'}))).catch(()=>{});
+  }
+}
+
+async function startApp(){
+  const _pl=getPlaces();let _mg=false;
+  _pl.forEach(p=>{if(p.rating>5){p.rating=Math.round(p.rating/2*2)/2;_mg=true;}});
+  if(_mg)savePlaces(_pl);
+  document.getElementById('auth').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  if(FB.url){showSyncStatus('🔄 데이터 불러오는 중...');await FB.pull();FB.startPoll();}
+  updateHeader();MAP.init();navTo('map');initPWA();
+}
+
+(function init(){
+  switchTab('login');
+  const existingUrl=DB.g('fb_url','');
+  if(existingUrl){const inp=document.getElementById('sync-url');if(inp)inp.value=existingUrl;}
+  const sid=DB.g('sid');
+  if(sid){const u=getUsers().find(x=>x.id===sid);if(u){ME=u;startApp();return;}}
+})();
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#f-name')&&!e.target.closest('#name-drop')){const nd=document.getElementById('name-drop');if(nd)nd.classList.add('hidden');}
+  if(!e.target.closest('.map-search-bar')){const d=document.getElementById('map-drop');if(d)d.classList.add('hidden');}
+});
+</script>
+</body>
+</html>
