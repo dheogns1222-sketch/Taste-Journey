@@ -263,10 +263,13 @@ nav{height:var(--nh);background:var(--sf);border-top:1px solid var(--bd);display
 .empty-sub{font-size:13px;line-height:1.6}
 .sec-sep{height:1px;background:var(--bd);margin:10px 0}
 /* Role-based card rimlight */
-.card-owner{border-left:4px solid transparent;border-image:linear-gradient(180deg,#D4A060,#C48A4A) 1;box-shadow:inset 3px 0 10px rgba(212,160,96,.15),0 2px 10px var(--sh)}
-.card-partner{border-left:4px solid transparent;border-image:linear-gradient(180deg,#5C6BC0,#7986CB) 1;box-shadow:inset 3px 0 10px rgba(92,107,192,.15),0 2px 10px var(--sh)}
+.card-owner{border-left:5px solid #C48A4A;box-shadow:0 2px 10px var(--sh)}
+.card-partner{border-left:5px solid #7986CB;box-shadow:0 2px 10px var(--sh)}
 .username-owner{color:#C48A4A;font-weight:800}
 .username-partner{color:#5C6BC0;font-weight:700}
+.username-guest{color:#888;font-weight:600}
+.n-badge{display:inline-block;background:#E53935;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle;letter-spacing:0.5px;animation:nblink 1.5s ease-in-out infinite}
+@keyframes nblink{0%,100%{opacity:1}50%{opacity:.6}}
 /* Avatar picker */
 .avatar-opts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:12px 0}
 .avatar-opt{font-size:28px;width:48px;height:48px;border-radius:50%;border:2px solid var(--bd);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;background:var(--sf2)}
@@ -894,6 +897,16 @@ function deletePlace(id){
   const places=getPlaces().filter(p=>p.id!==id); savePlaces(places);
 }
 
+function getLastSeen(){return DB.g('last_seen_comments',{});}
+function markSeen(pid){const m=getLastSeen();m[pid]=new Date().toISOString();DB.s('last_seen_comments',m);}
+function hasNewComments(p){
+  const comments=p.comments||[];
+  if(!comments.length)return false;
+  const m=getLastSeen();
+  const last=m[p.id];
+  if(!last)return true;
+  return comments.some(c=>c.createdAt>last);
+}
 function addComment(pid,text){
   const places=getPlaces(); const p=places.find(x=>x.id===pid); if(!p)return;
   if(!p.comments)p.comments=[];
@@ -1678,11 +1691,10 @@ function starsHTML(rating,size){
 function spiceHTML(spiciness,size){
   size=size||13;
   if(!spiciness)return'';
-  let h='<span style="display:inline-flex;align-items:center;gap:0">';
+  let h='<span style="display:inline-flex;align-items:center;gap:1px">';
   for(let i=1;i<=10;i++){
     const on=i<=spiciness;
-    const op=on?(0.35+0.065*i).toFixed(2):'0.18';
-    h+='<span style="font-size:'+size+'px;opacity:'+op+';'+(on?'':'filter:grayscale(1);')+'">🌶</span>';
+    h+='<span style="font-size:'+size+'px;'+(on?'opacity:1':'opacity:0.2;filter:grayscale(1) brightness(3)')+'">🌶</span>';
   }
   return h+'</span>';
 }
@@ -1981,6 +1993,7 @@ function cardHTML(p){
         ${price?`<span class="card-stat">${price}</span>`:''}
       </div>
       ${p.spiciness?`<div class="card-row" style="margin-top:2px">${spiceHTML(p.spiciness,12)}<span style="font-size:10px;color:var(--tx3);margin-left:3px">${p.spiciness}/10</span></div>`:''}
+      ${(()=>{const cc=(p.comments||[]).length;const nb=hasNewComments(p);return cc?`<div class="card-row" style="margin-top:3px"><span style="font-size:11px;color:var(--tx3)">💬 Total: ${cc}</span>${nb?'<span class="n-badge">N</span>':''}</div>`:''})()}
     </div>
     ${cover?`<img class="card-cover" src="${esc(cover)}" onerror="this.style.display='none'">`
            :`<div class="card-cover-ph">${cat?cat.e:'🍴'}</div>`}
@@ -2202,6 +2215,9 @@ let detailId=null;
 function openDetail(id){
   detailId=id;
   const p=getPlace(id); if(!p)return;
+  markSeen(id);
+  const _nbCard=document.getElementById('card-'+id);
+  if(_nbCard){const _nb=_nbCard.querySelector('.n-badge');if(_nb)_nb.remove();}
   const cat=C.CATS.find(c=>c.k===p.category);
   const type=p.type||(p.status==='wishlist'?'wish':'visited');
   document.getElementById('detail-title').textContent=(cat?cat.e+' ':'')+p.name;
@@ -2254,7 +2270,7 @@ function openDetail(id){
       const canDelC=ME&&(ME.role==='OWNER'||(ME.role==='PARTNER'&&c.role==='GUEST')||c.userId===ME.id);
       return `<div class="comment" id="cmt-${c.id}">
         <div class="comment-head" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-          <span class="comment-user ${c.role==='OWNER'?'username-owner':c.role==='PARTNER'?'username-partner':''}">${esc(cdp)}</span>
+          <span class="comment-user ${c.role==='OWNER'?'username-owner':c.role==='PARTNER'?'username-partner':'username-guest'}">${esc(cdp)}</span>
           <span style="font-size:9px;padding:1px 5px;border-radius:8px;background:var(--sf2);color:var(--tx3)">${C.ROLE_LBL[c.role]||c.role}</span>
           <span class="comment-time">${timeAgo(c.createdAt)}</span>
           ${canDelC?`<button onclick="deleteComment('${id}','${c.id}')" style="margin-left:auto;background:none;border:none;color:var(--tx3);font-size:12px;cursor:pointer;padding:1px 5px;border-radius:4px;line-height:1" title="삭제">✕</button>`:''}
@@ -2308,38 +2324,63 @@ function _buildShareCanvas(p){
   const cv=document.createElement('canvas');
   cv.width=W;cv.height=H;
   const ctx=cv.getContext('2d');
+  // Background & header
   ctx.fillStyle='#F6F0E8';ctx.fillRect(0,0,W,H);
   ctx.fillStyle='#4A2C17';ctx.fillRect(0,0,W,72);
-  ctx.fillStyle='rgba(255,255,255,0.85)';ctx.font='bold 17px -apple-system,system-ui,sans-serif';
+  ctx.fillStyle='rgba(255,255,255,0.85)';
+  ctx.font='bold 17px -apple-system,system-ui,sans-serif';
   ctx.textAlign='left';ctx.textBaseline='middle';
   ctx.fillText('🍽️ Taste Journey',18,36);
   ctx.font='13px -apple-system,system-ui,sans-serif';ctx.textAlign='right';
   ctx.fillText(type==='wish'?'📌 방문예정':'✅ 방문완료',W-18,36);
-  ctx.fillStyle='#2C1508';ctx.font='bold 28px -apple-system,system-ui,sans-serif';
+  // Left gold accent bar
+  ctx.fillStyle='#C48A4A';ctx.fillRect(0,0,5,H);
+  // Text area (right 260px reserved for photo)
+  const txMax=W-270;
+  // Place name
+  ctx.fillStyle='#2C1508';ctx.font='bold 26px -apple-system,system-ui,sans-serif';
   ctx.textAlign='left';ctx.textBaseline='top';
   const nameStr=(cat?cat.e+' ':'')+p.name;
-  ctx.fillText(nameStr.length>22?nameStr.slice(0,22)+'…':nameStr,18,84);
+  ctx.fillText(nameStr.length>20?nameStr.slice(0,20)+'…':nameStr,18,84,txMax-18);
   ctx.fillStyle='#7A5540';ctx.font='14px -apple-system,system-ui,sans-serif';
   const region=(p.address||'').trim().split(/\s+/).slice(0,3).join(' ');
-  ctx.fillText(p.category+(region?' · 📍 '+region:''),18,122);
-  let yOff=152;
+  ctx.fillText(p.category+(region?' · 📍 '+region:''),18,118,txMax-18);
+  let yOff=150;
+  // Rating: canvas half-star via clip
   if(p.rating){
     const fS=Math.floor(p.rating),hS=p.rating%1>=0.5?1:0,eS=Math.max(0,5-fS-hS);
-    ctx.fillStyle='#C48A4A';ctx.font='22px -apple-system,system-ui,sans-serif';
-    ctx.fillText('★'.repeat(fS)+(hS?'½':''),18,yOff);
-    ctx.fillStyle='#ccc';ctx.fillText('☆'.repeat(eS),(fS+(hS?.7:0))*22+18,yOff);
+    const sz=22;let sX=18;
+    ctx.font=sz+'px -apple-system,system-ui,sans-serif';ctx.textBaseline='top';
+    for(let i=0;i<fS;i++){ctx.fillStyle='#C48A4A';ctx.fillText('★',sX,yOff);sX+=sz*0.92;}
+    if(hS){
+      ctx.save();ctx.beginPath();ctx.rect(sX,yOff-2,sz*0.5,sz+4);ctx.clip();
+      ctx.fillStyle='#C48A4A';ctx.fillText('★',sX,yOff);ctx.restore();
+      ctx.save();ctx.beginPath();ctx.rect(sX+sz*0.5,yOff-2,sz*0.5,sz+4);ctx.clip();
+      ctx.fillStyle='#ddd';ctx.fillText('★',sX,yOff);ctx.restore();
+      sX+=sz*0.92;
+    }
+    ctx.fillStyle='#ddd';
+    for(let i=0;i<eS;i++){ctx.fillText('★',sX,yOff);sX+=sz*0.92;}
     ctx.fillStyle='#7A5540';ctx.font='13px -apple-system,system-ui,sans-serif';
-    ctx.fillText(p.rating+'/5',(fS+(hS?.7:0))*22+eS*22+22,yOff+5);yOff+=32;
+    ctx.textBaseline='top';ctx.fillText(p.rating+'/5',sX+4,yOff+6,80);
+    yOff+=30;
   }
+  // Spiciness: colored dots (red=on, grey=off)
   if(p.spiciness){
-    ctx.font='17px -apple-system,system-ui,sans-serif';
-    ctx.fillText('🌶'.repeat(Math.min(p.spiciness,10)),18,yOff);
+    let sX=18;
+    for(let i=1;i<=10;i++){
+      ctx.fillStyle=i<=p.spiciness?'#E53935':'#ccc';
+      ctx.beginPath();ctx.arc(sX+5,yOff+8,5,0,Math.PI*2);ctx.fill();
+      sX+=14;
+    }
     ctx.fillStyle='#7A5540';ctx.font='12px -apple-system,system-ui,sans-serif';
-    ctx.fillText(' 맵기 '+p.spiciness+'/10',Math.min(p.spiciness,10)*18+18,yOff+4);yOff+=28;
+    ctx.textBaseline='top';ctx.fillText('🌶 맵기 '+p.spiciness+'/10',sX+6,yOff+2,120);
+    yOff+=26;
   }
-  if(p.menu){ctx.fillStyle='#4A2C17';ctx.font='14px -apple-system,system-ui,sans-serif';ctx.fillText('🍴 '+p.menu,18,yOff);yOff+=26;}
-  if(p.memo){ctx.fillStyle='#8B6B5A';ctx.font='italic 12px -apple-system,system-ui,sans-serif';const m=p.memo.length>70?p.memo.slice(0,70)+'…':p.memo;ctx.fillText('"'+m+'"',18,yOff);yOff+=22;}
-  if(type==='wish'&&p.priority){ctx.fillStyle='#6B4226';ctx.font='bold 13px -apple-system,system-ui,sans-serif';ctx.fillText(['','🥇 1순위','🥈 2순위','🥉 3순위','4️⃣ 4순위','5️⃣ 5순위'][p.priority]||'',18,yOff);yOff+=22;}
+  if(p.menu){ctx.fillStyle='#4A2C17';ctx.font='14px -apple-system,system-ui,sans-serif';ctx.textBaseline='top';ctx.fillText('🍴 '+p.menu,18,yOff,txMax-18);yOff+=24;}
+  if(p.memo){ctx.fillStyle='#8B6B5A';ctx.font='italic 12px -apple-system,system-ui,sans-serif';const m=p.memo.length>55?p.memo.slice(0,55)+'…':p.memo;ctx.fillText('"'+m+'"',18,yOff,txMax-18);yOff+=20;}
+  if(type==='wish'&&p.priority){ctx.fillStyle='#6B4226';ctx.font='bold 13px -apple-system,system-ui,sans-serif';ctx.fillText(['','🥇 1순위','🥈 2순위','🥉 3순위','4️⃣ 4순위','5️⃣ 5순위'][p.priority]||'',18,yOff);yOff+=20;}
+  // Footer
   ctx.fillStyle='#C4A882';ctx.fillRect(18,H-62,W-36,1);
   ctx.fillStyle='#6B4226';ctx.font='bold 13px -apple-system,system-ui,sans-serif';
   ctx.textAlign='left';ctx.textBaseline='middle';
@@ -2348,7 +2389,6 @@ function _buildShareCanvas(p){
   ctx.textAlign='left';
   ctx.fillStyle='#B08060';ctx.font='11px -apple-system,system-ui,sans-serif';
   ctx.textAlign='center';ctx.fillText('커플 맛집 투어 기록 · Taste Journey',W/2,H-18);
-  ctx.fillStyle='#C48A4A';ctx.fillRect(0,0,5,H);
   return {cv,ctx,W,H,cat,type};
 }
 
@@ -2368,13 +2408,19 @@ async function shareAsCard(id){
   if(cover&&cover.startsWith('data:')){
     const img=new Image();
     img.onload=()=>{
-      const iw=220,ih=200;
+      const iw=250,ix=W-iw,iy=72,ih=H-72-62;
       ctx.save();
-      if(ctx.roundRect)ctx.roundRect(W-iw-18,76,iw,ih,12);
-      else{ctx.beginPath();ctx.rect(W-iw-18,76,iw,ih);}
-      ctx.clip();
-      ctx.drawImage(img,W-iw-18,76,iw,ih);
+      ctx.beginPath();ctx.rect(ix,iy,iw,ih);ctx.clip();
+      const ir=img.naturalWidth/img.naturalHeight,cr=iw/ih;
+      let sx,sy,sw,sh;
+      if(ir>cr){sw=img.naturalHeight*cr;sh=img.naturalHeight;sx=(img.naturalWidth-sw)/2;sy=0;}
+      else{sw=img.naturalWidth;sh=img.naturalWidth/cr;sx=0;sy=(img.naturalHeight-sh)/2;}
+      ctx.drawImage(img,sx,sy,sw,sh,ix,iy,iw,ih);
       ctx.restore();
+      const grad=ctx.createLinearGradient(ix,0,ix+50,0);
+      grad.addColorStop(0,'rgba(246,240,232,0.85)');
+      grad.addColorStop(1,'rgba(246,240,232,0)');
+      ctx.fillStyle=grad;ctx.fillRect(ix,iy,50,ih);
       doShow();
     };
     img.onerror=doShow;
