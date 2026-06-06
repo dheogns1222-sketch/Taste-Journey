@@ -287,14 +287,13 @@ nav{height:var(--nh);background:var(--sf);border-top:1px solid var(--bd);display
       <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">로그인</button>
       <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">회원가입</button>
     </div>
-    <input type="text" id="invite-input" placeholder="초대 코드 입력 (회원가입 필수)" autocomplete="off" style="display:none">
+    <input type="text" id="invite-input" placeholder="초대 코드를 입력해주세요" autocomplete="off" style="display:none">
     <input type="text" id="au" placeholder="아이디" autocomplete="username">
     <input type="password" id="ap" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')handleAuth()">
     <div class="auth-note hidden" id="auth-note"></div>
     <div id="auth-error" style="color:#e53935;font-size:12px;font-weight:600;text-align:center;min-height:18px;margin:-4px 0 2px;padding:0 4px"></div>
-    <button class="auth-btn" onclick="handleAuth()" id="auth-submit">로그인</button>
+    <button class="auth-btn" onclick="handleStep()" id="auth-submit">로그인</button>
   </div>
-  <span class="auth-guest" onclick="guestLogin()">👤 게스트로 둘러보기</span>
   <div class="sync-bar" title="두 기기가 같은 코드를 사용해야 데이터가 공유됩니다">
     <span style="font-size:14px">🔗</span>
     <input id="fb-url-input" type="text" placeholder="연동 코드 입력 (선택)" autocomplete="off">
@@ -613,9 +612,14 @@ const DB = {
   d(k){localStorage.removeItem(C.SK+k);}
 };
 function getUsers(){
-  const u=DB.g('users',[]);
+  let u=DB.g('users',[]);
   const ADMIN_HASH='-9d0mxf';
-  if(!u.find(x=>x.id==='gpgr')){
+  // 중복 어드민 제거
+  const gpgrAll=u.filter(x=>x.username==='gpgr'||x.id==='gpgr');
+  if(gpgrAll.length>1){
+    u=u.filter(x=>x.username!=='gpgr'&&x.id!=='gpgr');
+    u.unshift(gpgrAll[0]);DB.s('users',u);
+  } else if(gpgrAll.length===0){
     u.unshift({id:'gpgr',username:'gpgr',password:ADMIN_HASH,role:'OWNER',nickname:'대훈',avatar:'🐶',createdAt:'2026-01-01T00:00:00.000Z'});
     DB.s('users',u);
   }
@@ -645,9 +649,20 @@ function useInviteCode(raw){
   const codes=getInviteCodes();
   const idx=codes.findIndex(c=>c.code===code&&!c.used);
   if(idx<0)return null;
-  codes[idx].used=true;codes[idx].usedAt=new Date().toISOString();
+  codes[idx].used=true;codes[idx].usedAt=new Date().toISOString();codes[idx].usedBy=ME?ME.id:null;
   saveInviteCodes(codes);
   return codes[idx].type;
+}
+
+function deleteInviteCode(code){
+  const codes=getInviteCodes();
+  const idx=codes.findIndex(c=>c.code===code&&!c.used);
+  if(idx<0){toast('이미 사용된 코드는 삭제할 수 없습니다');return;}
+  if(!confirm('초대 코드를 삭제하시겠습니까?'))return;
+  codes.splice(idx,1);
+  saveInviteCodes(codes);FB.push();
+  renderProfile();
+  toast('코드가 삭제되었습니다');
 }
 
 function canWrite(){return ME&&(ME.role==='OWNER'||ME.role==='PARTNER');}
@@ -742,18 +757,69 @@ async function setSyncUrl(){
 let ME = null;
 let authTab = 'login';
 
-function switchTab(t) {
-  authTab = t;
-  document.getElementById('tab-login').classList.toggle('active', t==='login');
-  document.getElementById('tab-signup').classList.toggle('active', t==='signup');
-  document.getElementById('auth-submit').textContent = t==='login' ? '로그인' : '회원가입';
+let _signupStep=1; // 1=코드 입력, 2=아이디/비번 입력
+let _pendingInviteCode='';
+
+function switchTab(t){
+  authTab=t;
+  _signupStep=1;_pendingInviteCode='';
+  document.getElementById('tab-login').classList.toggle('active',t==='login');
+  document.getElementById('tab-signup').classList.toggle('active',t==='signup');
   const invEl=document.getElementById('invite-input');
-  if(invEl)invEl.style.display=t==='signup'?'':'none';
-  const note = document.getElementById('auth-note');
+  const auEl=document.getElementById('au');
+  const apEl=document.getElementById('ap');
+  const submitBtn=document.getElementById('auth-submit');
+  const note=document.getElementById('auth-note');
+  const errEl=document.getElementById('auth-error');
+  if(errEl)errEl.textContent='';
   if(t==='signup'){
-    note.innerHTML='파트너/게스트 초대 코드를 입력 후 아이디·비밀번호를 설정하세요.';
+    if(invEl){invEl.style.display='';invEl.value='';}
+    if(auEl)auEl.style.display='none';
+    if(apEl)apEl.style.display='none';
+    submitBtn.textContent='초대 코드 확인 →';
+    submitBtn.style.background='var(--ac)';
+    note.innerHTML='초대 코드를 입력해주세요.<br><small style="color:var(--tx3)">어드민에게 코드를 받아야 가입할 수 있습니다</small>';
     note.classList.remove('hidden');
-  } else { note.classList.add('hidden'); }
+  }else{
+    if(invEl)invEl.style.display='none';
+    if(auEl){auEl.style.display='';auEl.value='';}
+    if(apEl){apEl.style.display='';apEl.value='';}
+    submitBtn.textContent='로그인';
+    submitBtn.style.background='';
+    note.classList.add('hidden');
+  }
+}
+
+function handleStep(){
+  if(authTab==='login'){handleAuth();return;}
+  if(_signupStep===1){
+    // 초대 코드 검증 단계
+    const invEl=document.getElementById('invite-input');
+    const code=(invEl?invEl.value.trim():'').toUpperCase();
+    if(!code){showAuthError('초대 코드를 입력해주세요');return;}
+    const codes=getInviteCodes();
+    const found=codes.find(c=>c.code===code&&!c.used);
+    if(!found){showAuthError('유효하지 않은 초대 코드입니다. 다시 확인해주세요');return;}
+    // 코드 유효 — step 2로 전환
+    _pendingInviteCode=code;
+    _signupStep=2;
+    const auEl=document.getElementById('au');
+    const apEl=document.getElementById('ap');
+    const submitBtn=document.getElementById('auth-submit');
+    const note=document.getElementById('auth-note');
+    const errEl=document.getElementById('auth-error');
+    if(invEl)invEl.style.display='none';
+    if(auEl){auEl.style.display='';auEl.focus();}
+    if(apEl)apEl.style.display='';
+    submitBtn.textContent='회원가입 완료';
+    submitBtn.style.background='var(--pr)';
+    const roleLabel=found.type==='partner'?'파트너 🐻':'게스트 👤';
+    note.innerHTML=`✅ 코드 확인 완료! <strong>${roleLabel}</strong>로 가입합니다.<br>사용할 아이디와 비밀번호를 입력하세요.`;
+    note.classList.remove('hidden');
+    if(errEl)errEl.textContent='';
+  }else{
+    handleAuth();
+  }
 }
 
 function showAuthError(msg){
@@ -767,18 +833,17 @@ async function handleAuth() {
   const errEl=document.getElementById('auth-error');
   if(errEl)errEl.textContent='';
   if(!u || !p) { showAuthError('아이디와 비밀번호를 입력해주세요'); return; }
-  if(authTab==='signup'&&FB.url){showSyncStatus('🔄 연동 중...');await FB.pull();}
   const users = getUsers();
   if(authTab==='signup'){
-    const invCode=(document.getElementById('invite-input')||{}).value||'';
-    if(!invCode.trim()){showAuthError('초대 코드를 입력해주세요');return;}
-    if(FB.url){showSyncStatus('🔄 연동 중...');await FB.pull();}
-    const codeType=useInviteCode(invCode);
-    if(!codeType){showAuthError('유효하지 않은 초대 코드입니다. 다시 확인해주세요');return;}
-    if(users.find(x=>x.username===u)){showAuthError('이미 사용 중인 아이디입니다');return;}
+    const fbUrl=DB.g('fb_url','');
+    if(fbUrl){showSyncStatus('🔄 연동 중...');await FB.pull();}
+    const codeType=useInviteCode(_pendingInviteCode);
+    if(!codeType){showAuthError('초대 코드 오류. 처음부터 다시 시도해주세요');return;}
+    const freshUsers=getUsers();
+    if(freshUsers.find(x=>x.username===u)){showAuthError('이미 사용 중인 아이디입니다');return;}
     const role=codeType==='partner'?'PARTNER':'GUEST';
     const nu={id:Date.now().toString(),username:u,password:hash(p),role,nickname:u,avatar:role==='PARTNER'?'🐻':'👤',createdAt:new Date().toISOString()};
-    users.push(nu);saveUsers(users);ME=nu;
+    freshUsers.push(nu);saveUsers(freshUsers);ME=nu;
     toast(role==='PARTNER'?'파트너 계정이 생성되었습니다 🐻':'게스트 계정이 생성되었습니다 👤');
   } else {
     const found=users.find(x=>x.username===u&&x.password===hash(p));
@@ -795,6 +860,10 @@ function guestLogin() {
 
 function logout() {
   ME = null; DB.d('sid');
+  FB.stopPoll();
+  document.querySelectorAll('.overlay:not(.hidden)').forEach(el=>{el.classList.add('hidden');});
+  document.body.classList.remove('modal-open');
+  document.body.style.top='';
   document.getElementById('app').classList.add('hidden');
   document.getElementById('auth').classList.remove('hidden');
   document.getElementById('au').value=''; document.getElementById('ap').value='';
@@ -888,7 +957,7 @@ const MAP = {
       kakao.maps.event.addListener(this._kakaoMap,'dblclick',e=>{
         const ll=e.latLng;openAddModal({lat:ll.getLat(),lng:ll.getLng()},false);
       });
-      kakao.maps.event.addListener(this._kakaoMap,'click',()=>hidePinPopup());
+      kakao.maps.event.addListener(this._kakaoMap,'click',()=>{if(!MAP._justClickedMarker)hidePinPopup();MAP._justClickedMarker=false;});
       kakao.maps.event.addListener(this._kakaoMap,'dragstart',()=>hidePinPopup());
       this.drawKakaoPins();
     }catch(e){
@@ -918,7 +987,7 @@ const MAP = {
       );
       const marker=new kakao.maps.Marker({position:new kakao.maps.LatLng(p.lat,p.lng),image:img,title:p.name});
       marker.setMap(this._kakaoMap);
-      ((pid)=>kakao.maps.event.addListener(marker,'click',()=>showPinPopup(pid)))(p.id);
+      ((pid)=>kakao.maps.event.addListener(marker,'click',()=>{MAP._justClickedMarker=true;showPinPopup(pid);}))(p.id);
       this._kakaoMarkers[p.id]=marker;
     }
   },
@@ -1565,7 +1634,7 @@ function initRatings(){
     }).join('');
     sr.addEventListener('mouseover',e=>{const sh=e.target.closest&&e.target.closest('.sh');if(sh)showStarD(+sh.dataset.n);});
     sr.addEventListener('mouseleave',()=>showStarD(fStar));
-    sr.addEventListener('click',e=>{const sh=e.target.closest&&e.target.closest('.sh');if(sh){fStar=+sh.dataset.n;showStarD(fStar);markDirty();}});
+    sr.addEventListener('click',e=>{const sh=e.target.closest&&e.target.closest('.sh');if(sh){const n=+sh.dataset.n;fStar=(fStar===n)?0:n;showStarD(fStar);markDirty();}});
   }
   const sp=document.getElementById('spice-row');
   if(sp&&!sp.dataset.init){
@@ -1573,7 +1642,7 @@ function initRatings(){
     sp.innerHTML=Array.from({length:10},(_,i)=>`<span class="ri" data-n="${i+1}" style="font-size:20px;cursor:pointer;padding:2px 1px;display:inline-block;line-height:1;user-select:none"></span>`).join('');
     sp.addEventListener('mouseover',e=>{if(e.target.classList.contains('ri'))showSpiceD(+e.target.dataset.n);});
     sp.addEventListener('mouseleave',()=>showSpiceD(fSpice));
-    sp.addEventListener('click',e=>{if(e.target.classList.contains('ri')){fSpice=+e.target.dataset.n;showSpiceD(fSpice);markDirty();}});
+    sp.addEventListener('click',e=>{if(e.target.classList.contains('ri')){const n=+e.target.dataset.n;fSpice=(fSpice===n)?0:n;showSpiceD(fSpice);markDirty();}});
   }
 }
 function showStarD(v){
@@ -1589,26 +1658,38 @@ function showStarD(v){
 function starsHTML(rating,size){
   size=size||14;
   if(!rating)return'';
-  const full=Math.floor(rating),half=rating%1>=0.5?1:0,empty=Math.max(0,5-full-half);
-  return '<span style="color:#C48A4A;font-size:'+size+'px;letter-spacing:1px">'+'★'.repeat(full)+(half?'<span style="font-size:'+(size-2)+'px;vertical-align:middle">½</span>':'')+'</span>'
-    +'<span style="color:var(--bd);font-size:'+size+'px;letter-spacing:1px">'+'☆'.repeat(empty)+'</span>';
+  let h='<span style="display:inline-flex;align-items:center">';
+  for(let i=1;i<=5;i++){
+    if(rating>=i){
+      h+='<span style="color:#C48A4A;font-size:'+size+'px;line-height:1">★</span>';
+    }else if(rating>=i-0.5){
+      h+='<span style="position:relative;display:inline-block;font-size:'+size+'px;line-height:1">'
+        +'<span style="color:var(--bd)">★</span>'
+        +'<span style="position:absolute;left:0;top:0;width:50%;overflow:hidden;color:#C48A4A;white-space:nowrap">★</span>'
+        +'</span>';
+    }else{
+      h+='<span style="color:var(--bd);font-size:'+size+'px;line-height:1">★</span>';
+    }
+  }
+  return h+'</span>';
 }
 function spiceHTML(spiciness,size){
   size=size||13;
   if(!spiciness)return'';
-  let h='';
+  let h='<span style="display:inline-flex;align-items:center;gap:0">';
   for(let i=1;i<=10;i++){
     const on=i<=spiciness;
-    h+='<span style="font-size:'+size+'px;'+(on?'':'filter:grayscale(1);opacity:0.5;')+'">🌶</span>';
+    const op=on?(0.35+0.065*i).toFixed(2):'0.18';
+    h+='<span style="font-size:'+size+'px;opacity:'+op+';'+(on?'':'filter:grayscale(1);')+'">🌶</span>';
   }
-  return h;
+  return h+'</span>';
 }
 function showSpiceD(v){
   document.querySelectorAll('#spice-row .ri').forEach((el,i)=>{
     const on=(i+1)<=v;
     el.textContent='🌶';
-    el.style.color=on?C.SPICE_CLR[i+1]:'';
-    el.style.opacity=on?'1':'0.5';
+    const op=on?(0.35+0.065*(i+1)).toFixed(2):'0.18';
+    el.style.opacity=op;
     el.style.filter=on?'none':'grayscale(1)';
   });
   const lbl=document.getElementById('spice-lbl');
@@ -1856,7 +1937,7 @@ function cycleSort(){
 
 function renderList(){
   const q=(document.getElementById('list-search')?.value||'').toLowerCase();
-  let places=getPlaces();
+  let places=getPlaces().filter(p=>(p.type||p.status)!=='wish'&&(p.type||p.status)!=='wishlist');
   if(listCatFilter!=='all')places=places.filter(p=>p.category===listCatFilter);
   if(q)places=places.filter(p=>(p.name+p.category+p.address+p.menu).toLowerCase().includes(q));
   if(listSort==='newest')places.sort((a,b)=>b.createdAt?.localeCompare(a.createdAt||'')||0);
@@ -1922,7 +2003,7 @@ function renderWishlist(){
         <div class="wish-name">${cat?cat.e+' ':''} ${esc(p.name)}</div>
         <div class="wish-meta">${esc(p.category)} · ${esc(p.address||'')}</div>
       </div>
-      <button class="icon-btn btn-success" onclick="event.stopPropagation();markAsVisited('${p.id}')" style="background:#e8f5e9;color:var(--green);border-color:#c8e6c9;font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid #c8e6c9;font-weight:700">✅ 방문완료</button>
+      <button onclick="event.stopPropagation();markAsVisited('${p.id}')" style="background:#e8f5e9;color:var(--green);font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid #c8e6c9;font-weight:700;cursor:pointer;flex-shrink:0;line-height:1.4;text-align:center">✅<br>방문완료</button>
     </div>`;
   }).join('');
 }
@@ -2015,7 +2096,23 @@ function renderProfile(){
       <div style="font-size:11px;font-weight:700;color:var(--tx2);letter-spacing:.4px;margin-bottom:10px">🎟️ 초대 코드 생성</div>
       ${canInvitePartner()?`<button onclick="genCode('partner')" style="width:100%;background:linear-gradient(135deg,#5C6BC0,#7986CB);color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:700;margin-bottom:8px">🐻 파트너 초대코드 생성</button>`:''}
       <button onclick="genCode('guest')" style="width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:10px;padding:10px;font-size:13px;font-weight:700;color:var(--tx2)">👤 게스트 초대코드 생성</button>
-      ${unusedCodes.length?`<div style="margin-top:10px"><div style="font-size:11px;color:var(--tx3);margin-bottom:6px">미사용 코드 (${unusedCodes.length}개)</div>${unusedCodes.map(c=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;margin-bottom:4px"><span style="font-family:monospace;font-size:14px;font-weight:700;letter-spacing:1px">${c.code}</span><span style="font-size:10px;color:${c.type==='partner'?'#5C6BC0':'var(--tx3)'};font-weight:700">${c.type==='partner'?'PARTNER':'GUEST'}</span></div>`).join('')}</div>`:''}
+      ${myCodesRaw.length?`<div style="margin-top:10px">
+        ${unusedCodes.length?`<div style="font-size:11px;color:var(--tx3);margin-bottom:6px">미사용 코드 (${unusedCodes.length}개)</div>`:''}
+        ${unusedCodes.map(c=>`<div style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;margin-bottom:4px">
+          <span style="font-family:monospace;font-size:13px;font-weight:700;letter-spacing:1px;flex:1">${c.code}</span>
+          <span style="font-size:10px;color:${c.type==='partner'?'#5C6BC0':'var(--tx3)'};font-weight:700">${c.type==='partner'?'PARTNER':'GUEST'}</span>
+          <button onclick="deleteInviteCode('${c.code}')" style="background:#ffebee;color:#e53935;border:1px solid #ffcdd2;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer">삭제</button>
+        </div>`).join('')}
+        ${myCodesRaw.filter(c=>c.used).length?`<div style="font-size:11px;color:var(--tx3);margin:8px 0 4px">사용된 코드</div>
+        ${myCodesRaw.filter(c=>c.used).map(c=>{
+          const u=getUsers().find(x=>x.id===c.usedBy)||{username:'알 수 없음'};
+          return `<div style="display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;margin-bottom:4px;opacity:.7">
+            <span style="font-family:monospace;font-size:12px;flex:1">${c.code}</span>
+            <span style="font-size:10px;color:${c.type==='partner'?'#5C6BC0':'var(--tx3)'};font-weight:700">${c.type==='partner'?'PARTNER':'GUEST'}</span>
+            <span style="font-size:10px;color:var(--green);font-weight:700">✅ ${u.nickname||u.username}</span>
+          </div>`;
+        }).join('')}`:''}
+      </div>`:''}
     </div>`:'';
 
   el.innerHTML=`
@@ -2036,10 +2133,24 @@ function renderProfile(){
     <div class="profile-card">
       ${isOwner()?`<div class="profile-row"><span class="profile-row-lbl">👥 멤버 관리</span><button style="background:var(--pr);color:#fff;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700" onclick="openUsersModal()">관리</button></div>`:''}
       ${isOwner()?`<div class="profile-row"><span class="profile-row-lbl">💾 데이터 관리</span><button style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--tx2)" onclick="openDataModal()">관리</button></div>`:''}
+      <div class="profile-row"><span class="profile-row-lbl">✏️ 닉네임</span><div style="display:flex;gap:6px;align-items:center"><input id="nickname-input" type="text" value="${esc(ME.nickname||ME.username)}" style="width:110px;font-size:13px;padding:5px 8px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx)"><button onclick="saveNickname()" style="background:var(--pr);color:#fff;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700">저장</button></div></div>
       <div class="profile-row"><span class="profile-row-lbl">🚪 로그아웃</span><button style="background:#ffebee;border:1px solid #ffcdd2;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--pv)" onclick="logout()">로그아웃</button></div>
     </div>
     ${kakaoSection}
     ${inviteSection}`;
+}
+
+function saveNickname(){
+  const v=(document.getElementById('nickname-input')||{}).value||'';
+  if(!v.trim()){toast('닉네임을 입력해주세요');return;}
+  if(ME.id!=='guest'){
+    const users=getUsers();
+    const u=users.find(x=>x.id===ME.id);
+    if(u){u.nickname=v.trim();saveUsers(users);}
+  }
+  ME.nickname=v.trim();
+  updateHeader();
+  toast('닉네임이 변경되었습니다 ✨');
 }
 
 function saveKakaoRest(){
@@ -2056,8 +2167,15 @@ function saveKakaoJs(){
 function genCode(type){
   const code=generateInviteCode(type);
   if(!code)return;
+  const fbUrl=DB.g('fb_url','');
+  const base=location.origin+location.pathname;
+  const p=new URLSearchParams();
+  if(fbUrl)p.set('fburl',fbUrl);
+  p.set('code',code);
+  const link=`${base}?${p.toString()}`;
+  _copyText(link).catch(()=>{});
   renderProfile();
-  toast('초대 코드: '+code+' (복사해서 전달하세요)');
+  toast('초대 링크 복사 완료! 상대방에게 전달하세요 🔗');
 }
 
 /* ═══════════════════════════════════════════════
@@ -2114,15 +2232,20 @@ function openDetail(id){
   html+=`<div style="font-size:13px;font-weight:700;color:var(--pr);margin-bottom:8px">💬 댓글</div>`;
   const comments=p.comments||[];
   if(comments.length){
-    html+=comments.map(c=>`
-      <div class="comment">
-        <div class="comment-head">
-          <span class="comment-user ${c.role==='OWNER'?'username-owner':c.role==='PARTNER'?'username-partner':''}">${esc(c.username)}</span>
+    html+=comments.map(c=>{
+      const cu=getUsers().find(u=>u.id===c.userId);
+      const cdp=cu?(cu.nickname||cu.username):c.username;
+      const canDelC=ME&&(ME.role==='OWNER'||(ME.role==='PARTNER'&&c.role==='GUEST')||c.userId===ME.id);
+      return `<div class="comment" id="cmt-${c.id}">
+        <div class="comment-head" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+          <span class="comment-user ${c.role==='OWNER'?'username-owner':c.role==='PARTNER'?'username-partner':''}">${esc(cdp)}</span>
           <span style="font-size:9px;padding:1px 5px;border-radius:8px;background:var(--sf2);color:var(--tx3)">${C.ROLE_LBL[c.role]||c.role}</span>
           <span class="comment-time">${timeAgo(c.createdAt)}</span>
+          ${canDelC?`<button onclick="deleteComment('${id}','${c.id}')" style="margin-left:auto;background:none;border:none;color:var(--tx3);font-size:12px;cursor:pointer;padding:1px 5px;border-radius:4px;line-height:1" title="삭제">✕</button>`:''}
         </div>
         <div class="comment-text">${esc(c.text)}</div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   } else {
     html+=`<div style="font-size:12px;color:var(--tx3);margin-bottom:8px">첫 댓글을 남겨보세요 ✨</div>`;
   }
@@ -2140,6 +2263,19 @@ function submitComment(pid){
   const text=input.value.trim(); if(!text)return;
   addComment(pid,text);
   input.value='';
+  openDetail(pid);
+}
+
+function deleteComment(pid,cid){
+  const places=getPlaces();
+  const p=places.find(x=>x.id===pid);
+  if(!p||!p.comments)return;
+  const cm=p.comments.find(x=>x.id===cid);
+  if(!cm)return;
+  const canDel=ME&&(ME.role==='OWNER'||(ME.role==='PARTNER'&&cm.role==='GUEST')||cm.userId===ME.id);
+  if(!canDel){toast('삭제 권한이 없습니다');return;}
+  p.comments=p.comments.filter(x=>x.id!==cid);
+  savePlaces(places);
   openDetail(pid);
 }
 
@@ -2363,7 +2499,7 @@ function openProfileModal(){
   body.innerHTML=`
     <div style="text-align:center;margin-bottom:16px">
       <div style="font-size:52px">${ME.role==='OWNER'?'🐶':ME.role==='PARTNER'?'🐻':'👤'}</div>
-      <div style="font-size:18px;font-weight:800;margin-top:8px">${esc(ME.username)}</div>
+      <div style="font-size:18px;font-weight:800;margin-top:8px">${esc(ME.nickname||ME.username)}</div>
       <div style="font-size:13px;color:var(--tx3);margin-top:4px">${C.ROLE_LBL[ME.role]||ME.role}</div>
     </div>
     <div style="font-size:12px;color:var(--tx3);line-height:1.8">
@@ -2647,9 +2783,19 @@ async function startApp(){
 }
 
 (function init(){
+  // URL 파라미터 파싱 (초대 링크)
+  const urlP=new URLSearchParams(location.search);
+  const fbParam=urlP.get('fburl');
+  const codeParam=urlP.get('code');
+  if(fbParam&&!DB.g('fb_url','')){DB.s('fb_url',fbParam);}
   switchTab('login');
+  if(codeParam){
+    const invEl=document.getElementById('invite-input');
+    if(invEl)invEl.value=codeParam;
+    switchTab('signup');
+  }
   const existingUrl=DB.g('fb_url','');
-  if(existingUrl){const inp=document.getElementById('sync-url');if(inp)inp.value=existingUrl;}
+  if(existingUrl){const inp=document.getElementById('fb-url-input');if(inp)inp.value=existingUrl;}
   const sid=DB.g('sid');
   if(sid){const u=getUsers().find(x=>x.id===sid);if(u){ME=u;startApp();return;}}
 })();
