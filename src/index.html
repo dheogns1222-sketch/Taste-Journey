@@ -875,7 +875,7 @@ const MAP = {
       await new Promise((resolve,reject)=>{
         if(window.kakao&&window.kakao.maps){kakao.maps.load(resolve);return;}
         const s=document.createElement('script');
-        s.src='//dapi.kakao.com/v2/maps/sdk.js?appkey='+encodeURIComponent(key)+'&autoload=false';
+        s.src='//dapi.kakao.com/v2/maps/sdk.js?appkey='+encodeURIComponent(key)+'&autoload=false&libraries=services';
         s.onload=()=>kakao.maps.load(resolve);
         s.onerror=()=>reject(new Error('Kakao SDK load failed'));
         document.head.appendChild(s);
@@ -1300,14 +1300,47 @@ async function doMapSearch(q){
   drop.innerHTML='<div class="drop-item">검색 중...</div>';
   drop.classList.remove('hidden');
   try{
-    const items=await nominatimSearch(q);
+    let items=[];
+
+    // Kakao Places SDK 사용 (우선)
+    if(window.kakao&&window.kakao.maps&&window.kakao.maps.services){
+      items=await new Promise(resolve=>{
+        const ps=new kakao.maps.services.Places();
+        ps.keywordSearch(q,function(data,status){
+          if(status===kakao.maps.services.Status.OK&&data&&data.length){
+            resolve(data.map(d=>({
+              display:d.place_name,
+              road:d.road_address_name||d.address_name,
+              lat:parseFloat(d.y),lng:parseFloat(d.x),
+              category:d.category_name||''
+            })));
+          }else{
+            // 장소 없으면 주소 검색
+            const gc=new kakao.maps.services.Geocoder();
+            gc.addressSearch(q,function(result,status2){
+              if(status2===kakao.maps.services.Status.OK&&result&&result.length){
+                resolve(result.map(r=>({
+                  display:r.address_name,
+                  road:r.road_address?r.road_address.address_name:r.address_name,
+                  lat:parseFloat(r.y),lng:parseFloat(r.x),category:'주소'
+                })));
+              }else resolve([]);
+            });
+          }
+        },{size:10});
+      });
+    }
+
+    // 폴백: Nominatim
+    if(!items.length) items=await nominatimSearch(q);
+
     if(!items.length){drop.innerHTML='<div class="drop-item" style="color:var(--tx3)">결과 없음</div>';return;}
+    window._mapResults=items;
     drop.innerHTML=items.map((item,i)=>`
       <div class="drop-item" onclick="pickMapResult(${i})">
-        <div class="drop-item-name">${esc(item.display.split(',')[0])}</div>
-        <div class="drop-item-addr">${esc(item.display)}</div>
+        <div class="drop-item-name">${esc(item.display)}</div>
+        <div class="drop-item-addr">${esc(item.road||item.display)}</div>
       </div>`).join('');
-    window._mapResults=items;
   }catch{drop.innerHTML='<div class="drop-item" style="color:var(--pv)">검색 오류</div>';}
 }
 
@@ -1362,22 +1395,47 @@ async function searchByName(q){
   res.innerHTML='<div style="padding:10px 12px;font-size:12px;color:var(--tx3)">🔍 검색 중...</div>';
   panel.classList.remove('hidden');
   try{
-    const kakaoKey=DB.g('kakao_rest_key','');
     let results=[];
-    if(kakaoKey){
-      try{
-        const r=await fetch('https://dapi.kakao.com/v2/local/search/keyword.json?query='+encodeURIComponent(q)+'&size=15&category_group_code=FD6,CE7',
-          {headers:{'Authorization':'KakaoAK '+kakaoKey}});
-        const data=await r.json();
-        if(data.documents&&data.documents.length){
-          results=data.documents.map(d=>({
-            name:d.place_name,
-            addr:d.road_address_name||d.address_name,
-            lat:parseFloat(d.y),lng:parseFloat(d.x)
-          }));
-        }
-      }catch(e){console.warn('Kakao search failed, fallback to Nominatim');}
+
+    // 1순위: Kakao Places SDK (카카오맵 네이티브와 동일)
+    if(window.kakao&&window.kakao.maps&&window.kakao.maps.services){
+      results=await new Promise(resolve=>{
+        const ps=new kakao.maps.services.Places();
+        ps.keywordSearch(q,function(data,status){
+          if(status===kakao.maps.services.Status.OK&&data&&data.length){
+            resolve(data.map(d=>({
+              name:d.place_name,
+              addr:d.road_address_name||d.address_name,
+              lat:parseFloat(d.y),lng:parseFloat(d.x),
+              category:d.category_name,
+              phone:d.phone||''
+            })));
+          }else resolve([]);
+        },{size:15});
+      });
     }
+
+    // 2순위: Kakao REST API (카테고리 필터 없음)
+    if(!results.length){
+      const kakaoKey=DB.g('kakao_rest_key','');
+      if(kakaoKey){
+        try{
+          const r=await fetch('https://dapi.kakao.com/v2/local/search/keyword.json?query='+encodeURIComponent(q)+'&size=15',
+            {headers:{'Authorization':'KakaoAK '+kakaoKey}});
+          const data=await r.json();
+          if(data.documents&&data.documents.length){
+            results=data.documents.map(d=>({
+              name:d.place_name,
+              addr:d.road_address_name||d.address_name,
+              lat:parseFloat(d.y),lng:parseFloat(d.x),
+              category:d.category_name||'',phone:d.phone||''
+            }));
+          }
+        }catch(e){console.warn('Kakao REST search failed');}
+      }
+    }
+
+    // 3순위: Nominatim 폴백
     if(!results.length){
       const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&countrycodes=kr&addressdetails=1&namedetails=1&limit=10',
         {headers:{'Accept-Language':'ko','User-Agent':'TasteJourney/1.0'}});
@@ -1385,15 +1443,18 @@ async function searchByName(q){
       results=(items||[]).map(d=>({
         name:(d.namedetails&&d.namedetails.name)||d.display_name.split(',')[0],
         addr:buildKoAddr(d.address)||d.display_name.split(',').slice(0,3).join(','),
-        lat:parseFloat(d.lat),lng:parseFloat(d.lon)
+        lat:parseFloat(d.lat),lng:parseFloat(d.lon),category:'',phone:''
       })).filter(d=>d.name&&d.name.length<60);
     }
-    if(!results.length){res.innerHTML='<div style="padding:10px 12px;font-size:12px;color:var(--tx3)">검색 결과 없음. 상호명을 더 구체적으로 입력하세요.</div>';return;}
+
+    if(!results.length){res.innerHTML='<div style="padding:10px 12px;font-size:12px;color:var(--tx3)">검색 결과가 없습니다. 다른 검색어를 시도해보세요.</div>';return;}
     panel._items=results;
     res.innerHTML=results.map((item,i)=>
       '<div class="addr-result" onclick="selectNameResult('+i+')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--bd)">'+
       '<div style="font-size:13px;font-weight:700;color:var(--tx1)">'+esc(item.name)+'</div>'+
+      (item.category?'<div style="font-size:10px;color:var(--pr);margin-top:1px;font-weight:600">'+esc(item.category.split(' > ').pop())+'</div>':'')+
       '<div style="font-size:11px;color:var(--tx3);margin-top:2px">📍 '+esc(item.addr||'주소 없음')+'</div>'+
+      (item.phone?'<div style="font-size:10px;color:var(--tx3);margin-top:1px">📞 '+esc(item.phone)+'</div>':'')+
       '</div>'
     ).join('');
   }catch(e){
