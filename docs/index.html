@@ -786,15 +786,21 @@ function switchTab(t){
   }
 }
 
-function handleStep(){
+async function handleStep(){
   if(authTab==='login'){handleAuth();return;}
   if(_signupStep===1){
     // 초대 코드 검증 단계
     const invEl=document.getElementById('invite-input');
     const code=(invEl?invEl.value.trim():'').toUpperCase();
     if(!code){showAuthError('초대 코드를 입력해주세요');return;}
-    const codes=getInviteCodes();
-    const found=codes.find(c=>c.code===code&&!c.used);
+    let codes=getInviteCodes();
+    let found=codes.find(c=>c.code===code&&!c.used);
+    if(!found&&FB.url){
+      showAuthError('코드 확인 중...');
+      await FB.pull();
+      codes=getInviteCodes();
+      found=codes.find(c=>c.code===code&&!c.used);
+    }
     if(!found){showAuthError('유효하지 않은 초대 코드입니다. 다시 확인해주세요');return;}
     // 코드 유효 — step 2로 전환
     _pendingInviteCode=code;
