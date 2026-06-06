@@ -675,7 +675,7 @@ const FB = {
     if(this._busy)return;
     this._busy=true;
     try{
-      const payload={users:getUsers(),places:getPlaces(),invite_codes:getInviteCodes(),pushedAt:new Date().toISOString()};
+      const payload={users:getUsers(),places:getPlaces(),invite_codes:getInviteCodes(),kakao_rest_key:DB.g('kakao_rest_key',''),kakao_js_key:DB.g('kakao_js_key',''),pushedAt:new Date().toISOString()};
       await fetch(url+'/tj.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
       showSyncStatus('☁️ 동기화 완료');
     }catch(e){showSyncStatus('⚠️ 동기화 실패',true);}
@@ -692,6 +692,8 @@ const FB = {
       if(d.users&&Array.isArray(d.users))DB.s('users',d.users);
       if(d.places&&Array.isArray(d.places))DB.s('places',d.places);
       if(d.invite_codes&&Array.isArray(d.invite_codes))DB.s('invite_codes',d.invite_codes);
+      if(d.kakao_rest_key)DB.s('kakao_rest_key',d.kakao_rest_key);
+      if(d.kakao_js_key)DB.s('kakao_js_key',d.kakao_js_key);
       return true;
     }catch(e){return false;}
   },
@@ -2150,11 +2152,13 @@ function saveNickname(){
 function saveKakaoRest(){
   const v=(document.getElementById('kk-rest')||{}).value||'';
   v.trim()?DB.s('kakao_rest_key',v.trim()):DB.d('kakao_rest_key');
+  FB.push();
   toast('카카오 REST API 키가 저장되었습니다 ✅');
 }
 function saveKakaoJs(){
   const v=(document.getElementById('kk-js')||{}).value||'';
   v.trim()?DB.s('kakao_js_key',v.trim()):DB.d('kakao_js_key');
+  FB.push();
   toast('카카오 JS 키 저장 완료. 새로고침 하면 카카오맵으로 전환됩니다 🗺️');
   setTimeout(()=>{if(confirm('카카오맵을 적용하려면 새로고침이 필요합니다. 지금 새로고침 하시겠습니까?'))location.reload();},1500);
 }
