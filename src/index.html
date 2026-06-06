@@ -263,8 +263,9 @@ nav{height:var(--nh);background:var(--sf);border-top:1px solid var(--bd);display
 .empty-sub{font-size:13px;line-height:1.6}
 .sec-sep{height:1px;background:var(--bd);margin:10px 0}
 /* Role-based card rimlight */
-.card-owner{border-left:5px solid #C48A4A;box-shadow:0 2px 10px var(--sh)}
-.card-partner{border-left:5px solid #7986CB;box-shadow:0 2px 10px var(--sh)}
+.card-owner{box-shadow:0 3px 14px rgba(196,138,74,.25),0 2px 8px var(--sh)}
+.card-partner{box-shadow:0 3px 14px rgba(121,134,203,.25),0 2px 8px var(--sh)}
+.stripe-partner{background:#7986CB!important}
 .username-owner{color:#C48A4A;font-weight:800}
 .username-partner{color:#5C6BC0;font-weight:700}
 .username-guest{color:#888;font-weight:600}
@@ -1978,7 +1979,7 @@ function cardHTML(p){
   const creatorRole=creator?.role||'GUEST';
   const rimCls=creatorRole==='OWNER'?'card-owner':creatorRole==='PARTNER'?'card-partner':'';
   return `<div class="card ${rimCls}" id="card-${p.id}" onclick="openDetail('${p.id}')">
-    <div class="card-stripe ${type==='wish'?'wish':''}"></div>
+    <div class="card-stripe ${type==='wish'?'wish':(creatorRole==='PARTNER'?'stripe-partner':'')}" ></div>
     <div class="card-content">
       <div class="card-top">
         <div class="card-icon">${cat?cat.e:'🍴'}</div>
@@ -2320,82 +2321,158 @@ function likePlace(id){
 function _buildShareCanvas(p){
   const cat=C.CATS.find(c=>c.k===p.category);
   const type=p.type||(p.status==='wishlist'?'wish':'visited');
-  const W=800,H=440;
-  const cv=document.createElement('canvas');
-  cv.width=W;cv.height=H;
+  const W=800,H=440,hH=68,fH=52;
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;
   const ctx=cv.getContext('2d');
-  // Background & header
-  ctx.fillStyle='#F6F0E8';ctx.fillRect(0,0,W,H);
-  ctx.fillStyle='#4A2C17';ctx.fillRect(0,0,W,72);
-  ctx.fillStyle='rgba(255,255,255,0.85)';
-  ctx.font='bold 17px -apple-system,system-ui,sans-serif';
+
+  // ── 배경 ──
+  ctx.fillStyle='#F0E8DC';ctx.fillRect(0,0,W,H);
+
+  // ── 헤더 ──
+  ctx.fillStyle='#2C1508';ctx.fillRect(0,0,W,hH);
+  // 앱 타이틀
+  ctx.fillStyle='rgba(255,255,255,0.92)';
+  ctx.font='bold 16px -apple-system,system-ui,sans-serif';
   ctx.textAlign='left';ctx.textBaseline='middle';
-  ctx.fillText('🍽️ Taste Journey',18,36);
-  ctx.font='13px -apple-system,system-ui,sans-serif';ctx.textAlign='right';
-  ctx.fillText(type==='wish'?'📌 방문예정':'✅ 방문완료',W-18,36);
-  // Left gold accent bar
-  ctx.fillStyle='#C48A4A';ctx.fillRect(0,0,5,H);
-  // Text area (right 260px reserved for photo)
-  const txMax=W-270;
-  // Place name
-  ctx.fillStyle='#2C1508';ctx.font='bold 26px -apple-system,system-ui,sans-serif';
-  ctx.textAlign='left';ctx.textBaseline='top';
+  ctx.fillText('🍽️ Taste Journey',22,hH/2);
+  // 우측: 맛집 카드 공유
+  ctx.fillStyle='rgba(196,138,74,0.95)';
+  ctx.font='bold 13px -apple-system,system-ui,sans-serif';
+  ctx.textAlign='right';
+  ctx.fillText('🔗 맛집 카드 공유',W-22,hH/2);
+
+  // ── 좌측 골드 액센트 바 ──
+  ctx.fillStyle='#C48A4A';ctx.fillRect(0,0,6,H);
+
+  // ── 사진 영역 (우측 240px, 헤더~푸터) ──
+  const phX=W-240,phY=hH,phW=240,phH=H-hH-fH;
+  // 사진 플레이스홀더 (카테고리 아이콘)
+  ctx.fillStyle='rgba(0,0,0,0.05)';ctx.fillRect(phX,phY,phW,phH);
+  ctx.fillStyle='rgba(196,138,74,0.15)';ctx.fillRect(phX,phY,phW,phH);
+  ctx.font='72px -apple-system,system-ui,sans-serif';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(cat?cat.e:'🍴',phX+phW/2,phY+phH/2);
+  // 텍스트-사진 구분선
+  ctx.strokeStyle='rgba(196,138,74,0.2)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(phX,phY);ctx.lineTo(phX,phY+phH);ctx.stroke();
+
+  // ── 텍스트 영역 ──
+  const tx=22,txR=phX-18;
+  let y=hH+14;
+
+  // 방문상태 배지
+  const isWish=type==='wish';
+  ctx.fillStyle=isWish?'rgba(25,101,192,0.9)':'rgba(46,125,50,0.9)';
+  const bdgW=86,bdgH=19;
+  ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(tx,y,bdgW,bdgH,9);
+  else ctx.rect(tx,y,bdgW,bdgH);
+  ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='bold 10px -apple-system,system-ui,sans-serif';
+  ctx.textAlign='left';ctx.textBaseline='middle';
+  ctx.fillText(isWish?'📌 방문예정':'✅ 방문완료',tx+8,y+bdgH/2);
+  y+=bdgH+10;
+
+  // 가게 이름
+  ctx.fillStyle='#1A0A04';
+  ctx.font='bold 28px -apple-system,system-ui,sans-serif';
+  ctx.textBaseline='top';
   const nameStr=(cat?cat.e+' ':'')+p.name;
-  ctx.fillText(nameStr.length>20?nameStr.slice(0,20)+'…':nameStr,18,84,txMax-18);
-  ctx.fillStyle='#7A5540';ctx.font='14px -apple-system,system-ui,sans-serif';
-  const region=(p.address||'').trim().split(/\s+/).slice(0,3).join(' ');
-  ctx.fillText(p.category+(region?' · 📍 '+region:''),18,118,txMax-18);
-  let yOff=150;
-  // Rating: canvas half-star via clip
+  ctx.fillText(nameStr.length>17?nameStr.slice(0,17)+'…':nameStr,tx,y,txR-tx);
+  y+=34;
+
+  // 주소 or 카테고리
+  ctx.fillStyle='#7A5540';ctx.font='13px -apple-system,system-ui,sans-serif';
+  if(p.address){
+    const addr=(p.address||'').trim().split(/\s+/).slice(0,5).join(' ');
+    ctx.fillText('📍 '+addr,tx,y,txR-tx);
+  } else {
+    ctx.fillText(p.category,tx,y,txR-tx);
+  }
+  y+=20;
+
+  // 메뉴
+  if(p.menu){
+    ctx.fillStyle='#5A3A20';ctx.font='12px -apple-system,system-ui,sans-serif';
+    ctx.fillText('🍴 '+p.menu,tx,y,txR-tx);y+=18;
+  }
+  y+=6;
+
+  // 별점 (반별 클립)
   if(p.rating){
     const fS=Math.floor(p.rating),hS=p.rating%1>=0.5?1:0,eS=Math.max(0,5-fS-hS);
-    const sz=22;let sX=18;
+    const sz=22;let sX=tx;
     ctx.font=sz+'px -apple-system,system-ui,sans-serif';ctx.textBaseline='top';
-    for(let i=0;i<fS;i++){ctx.fillStyle='#C48A4A';ctx.fillText('★',sX,yOff);sX+=sz*0.92;}
+    for(let i=0;i<fS;i++){ctx.fillStyle='#C48A4A';ctx.fillText('★',sX,y);sX+=sz*0.90;}
     if(hS){
-      ctx.save();ctx.beginPath();ctx.rect(sX,yOff-2,sz*0.5,sz+4);ctx.clip();
-      ctx.fillStyle='#C48A4A';ctx.fillText('★',sX,yOff);ctx.restore();
-      ctx.save();ctx.beginPath();ctx.rect(sX+sz*0.5,yOff-2,sz*0.5,sz+4);ctx.clip();
-      ctx.fillStyle='#ddd';ctx.fillText('★',sX,yOff);ctx.restore();
-      sX+=sz*0.92;
+      ctx.save();ctx.beginPath();ctx.rect(sX,y-2,sz*0.5,sz+4);ctx.clip();
+      ctx.fillStyle='#C48A4A';ctx.fillText('★',sX,y);ctx.restore();
+      ctx.save();ctx.beginPath();ctx.rect(sX+sz*0.5,y-2,sz*0.5,sz+4);ctx.clip();
+      ctx.fillStyle='#C8B89A';ctx.fillText('★',sX,y);ctx.restore();
+      sX+=sz*0.90;
     }
-    ctx.fillStyle='#ddd';
-    for(let i=0;i<eS;i++){ctx.fillText('★',sX,yOff);sX+=sz*0.92;}
-    ctx.fillStyle='#7A5540';ctx.font='13px -apple-system,system-ui,sans-serif';
-    ctx.textBaseline='top';ctx.fillText(p.rating+'/5',sX+4,yOff+6,80);
-    yOff+=30;
+    ctx.fillStyle='#C8B89A';
+    for(let i=0;i<eS;i++){ctx.fillText('★',sX,y);sX+=sz*0.90;}
+    ctx.fillStyle='#7A5540';ctx.font='bold 13px -apple-system,system-ui,sans-serif';
+    ctx.textBaseline='top';ctx.fillText(p.rating+'/5',sX+6,y+5);
+    y+=28;
   }
-  // Spiciness: colored dots (red=on, grey=off)
+
+  // 맵기: 🌶 emoji + globalAlpha (ON=선명, OFF=투명)
   if(p.spiciness){
-    let sX=18;
+    const esz=16;let sX=tx;
+    ctx.font=esz+'px -apple-system,system-ui,sans-serif';ctx.textBaseline='top';
     for(let i=1;i<=10;i++){
-      ctx.fillStyle=i<=p.spiciness?'#E53935':'#ccc';
-      ctx.beginPath();ctx.arc(sX+5,yOff+8,5,0,Math.PI*2);ctx.fill();
-      sX+=14;
+      ctx.globalAlpha=i<=p.spiciness?1:0.15;
+      ctx.fillText('🌶',sX,y+1);sX+=esz+2;
     }
-    ctx.fillStyle='#7A5540';ctx.font='12px -apple-system,system-ui,sans-serif';
-    ctx.textBaseline='top';ctx.fillText('🌶 맵기 '+p.spiciness+'/10',sX+6,yOff+2,120);
-    yOff+=26;
+    ctx.globalAlpha=1;
+    ctx.fillStyle='#7A5540';ctx.font='bold 11px -apple-system,system-ui,sans-serif';
+    ctx.textBaseline='top';ctx.fillText(p.spiciness+'/10',sX+4,y+4);
+    y+=22;
   }
-  if(p.menu){ctx.fillStyle='#4A2C17';ctx.font='14px -apple-system,system-ui,sans-serif';ctx.textBaseline='top';ctx.fillText('🍴 '+p.menu,18,yOff,txMax-18);yOff+=24;}
-  if(p.memo){ctx.fillStyle='#8B6B5A';ctx.font='italic 12px -apple-system,system-ui,sans-serif';const m=p.memo.length>55?p.memo.slice(0,55)+'…':p.memo;ctx.fillText('"'+m+'"',18,yOff,txMax-18);yOff+=20;}
-  if(type==='wish'&&p.priority){ctx.fillStyle='#6B4226';ctx.font='bold 13px -apple-system,system-ui,sans-serif';ctx.fillText(['','🥇 1순위','🥈 2순위','🥉 3순위','4️⃣ 4순위','5️⃣ 5순위'][p.priority]||'',18,yOff);yOff+=20;}
-  // Footer
-  ctx.fillStyle='#C4A882';ctx.fillRect(18,H-62,W-36,1);
-  ctx.fillStyle='#6B4226';ctx.font='bold 13px -apple-system,system-ui,sans-serif';
-  ctx.textAlign='left';ctx.textBaseline='middle';
-  if(p.price)ctx.fillText('💰 '+p.price.toLocaleString()+'원',18,H-44);
-  if(p.visitDate){ctx.textAlign='right';ctx.fillText('📅 '+p.visitDate,W-18,H-44);}
-  ctx.textAlign='left';
-  ctx.fillStyle='#B08060';ctx.font='11px -apple-system,system-ui,sans-serif';
-  ctx.textAlign='center';ctx.fillText('커플 맛집 투어 기록 · Taste Journey',W/2,H-18);
-  return {cv,ctx,W,H,cat,type};
+
+  // 메모 (반투명 박스)
+  if(p.memo){
+    y+=6;
+    const mH=36,mW=txR-tx;
+    ctx.fillStyle='rgba(44,21,8,0.06)';
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(tx,y,mW,mH,6);else ctx.rect(tx,y,mW,mH);
+    ctx.fill();
+    ctx.fillStyle='#7A5540';ctx.font='italic 12px -apple-system,system-ui,sans-serif';
+    ctx.textBaseline='middle';
+    const m=p.memo.length>50?p.memo.slice(0,50)+'…':p.memo;
+    ctx.fillText('"'+m+'"',tx+10,y+mH/2,mW-20);
+    y+=mH;
+  }
+
+  if(type==='wish'&&p.priority){
+    y+=4;ctx.fillStyle='#6B4226';ctx.font='bold 13px -apple-system,system-ui,sans-serif';
+    ctx.textBaseline='top';
+    ctx.fillText(['','🥇 1순위','🥈 2순위','🥉 3순위','4️⃣ 4순위','5️⃣ 5순위'][p.priority]||'',tx,y);
+  }
+
+  // ── 푸터 (다크 바) ──
+  const fY=H-fH;
+  ctx.fillStyle='rgba(44,21,8,0.88)';ctx.fillRect(0,fY,W,fH);
+  ctx.fillStyle='rgba(196,138,74,0.6)';ctx.fillRect(0,fY,W,1);
+  ctx.fillStyle='rgba(255,255,255,0.82)';
+  ctx.font='bold 12px -apple-system,system-ui,sans-serif';
+  ctx.textBaseline='middle';ctx.textAlign='left';
+  if(p.price)ctx.fillText('💰 '+p.price.toLocaleString()+'원',22,fY+16);
+  ctx.textAlign='right';
+  if(p.visitDate)ctx.fillText('📅 '+p.visitDate,W-22,fY+16);
+  ctx.fillStyle='rgba(196,168,130,0.65)';ctx.font='10px -apple-system,system-ui,sans-serif';
+  ctx.textAlign='center';ctx.fillText('커플 맛집 투어 기록 · Taste Journey',W/2,fY+36);
+
+  return {cv,ctx,W,H,cat,type,phX,phY,phW,phH};
 }
 
 async function shareAsCard(id){
   const p=getPlace(id);if(!p)return;
   toast('카드 생성 중... ✨');
-  const {cv,ctx,W,H}=_buildShareCanvas(p);
+  const {cv,ctx,W,H,phX,phY,phW,phH}=_buildShareCanvas(p);
   const cover=(p.photos&&(p.photos[p.mainPhotoIdx||0]||p.photos[0]))||(p.photoUrls&&p.photoUrls[0]);
 
   const doShow=()=>{
@@ -2408,19 +2485,19 @@ async function shareAsCard(id){
   if(cover&&cover.startsWith('data:')){
     const img=new Image();
     img.onload=()=>{
-      const iw=250,ix=W-iw,iy=72,ih=H-72-62;
       ctx.save();
-      ctx.beginPath();ctx.rect(ix,iy,iw,ih);ctx.clip();
-      const ir=img.naturalWidth/img.naturalHeight,cr=iw/ih;
+      ctx.beginPath();ctx.rect(phX,phY,phW,phH);ctx.clip();
+      const ir=img.naturalWidth/img.naturalHeight,cr=phW/phH;
       let sx,sy,sw,sh;
       if(ir>cr){sw=img.naturalHeight*cr;sh=img.naturalHeight;sx=(img.naturalWidth-sw)/2;sy=0;}
       else{sw=img.naturalWidth;sh=img.naturalWidth/cr;sx=0;sy=(img.naturalHeight-sh)/2;}
-      ctx.drawImage(img,sx,sy,sw,sh,ix,iy,iw,ih);
+      ctx.drawImage(img,sx,sy,sw,sh,phX,phY,phW,phH);
       ctx.restore();
-      const grad=ctx.createLinearGradient(ix,0,ix+50,0);
-      grad.addColorStop(0,'rgba(246,240,232,0.85)');
-      grad.addColorStop(1,'rgba(246,240,232,0)');
-      ctx.fillStyle=grad;ctx.fillRect(ix,iy,50,ih);
+      // 좌측 그라디언트 (텍스트 가독성)
+      const grad=ctx.createLinearGradient(phX,0,phX+60,0);
+      grad.addColorStop(0,'rgba(240,232,220,0.9)');
+      grad.addColorStop(1,'rgba(240,232,220,0)');
+      ctx.fillStyle=grad;ctx.fillRect(phX,phY,60,phH);
       doShow();
     };
     img.onerror=doShow;
