@@ -45,6 +45,12 @@ a{color:var(--pr)}
 .auth-btn:hover{background:var(--pr2)}
 .auth-note{background:var(--sf2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--tx3);line-height:1.5;border:1px solid var(--bd)}
 .auth-note strong{color:var(--pr)}
+.sync-bar{display:flex;align-items:center;gap:6px;margin-top:10px;padding:9px 12px;background:var(--sf2);border-radius:9px;border:1px solid var(--bd)}
+.sync-bar input{flex:1;border:none;background:transparent;font-size:12px;color:var(--tx);outline:none;min-width:0}
+.sync-bar input::placeholder{color:var(--tx3)}
+.sync-bar button{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;border:none;cursor:pointer;background:var(--pr);color:#fff;white-space:nowrap}
+#sync-status{position:fixed;top:52px;right:8px;z-index:999;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:rgba(0,0,0,.55);color:#fff;pointer-events:none;transition:opacity .4s;opacity:0}
+#sync-status.show{opacity:1}
 .auth-guest{color:var(--tx3);font-size:13px;text-align:center;text-decoration:underline;cursor:pointer;padding:4px}
 
 /* APP SHELL */
@@ -286,6 +292,14 @@ nav{height:var(--nh);background:var(--sf);border-top:1px solid var(--bd);display
     <button class="auth-btn" onclick="handleAuth()" id="auth-submit">로그인</button>
   </div>
   <span class="auth-guest" onclick="guestLogin()">👤 게스트로 둘러보기</span>
+  <div class="sync-bar" title="두 기기가 같은 코드를 사용해야 데이터가 공유됩니다">
+    <span style="font-size:14px">🔗</span>
+    <input id="fb-url-input" type="text" placeholder="연동 코드 입력 (선택)" autocomplete="off">
+    <button onclick="setSyncUrl()">연결</button>
+  </div>
+  <div id="sync-help" style="font-size:10px;color:var(--tx3);text-align:center;margin-top:4px;display:none">
+    연동 코드가 설정되었습니다 ✅
+  </div>
 </div>
 
 <!-- APP -->
@@ -610,10 +624,91 @@ const DB = {
   d(k){localStorage.removeItem(C.SK+k);}
 };
 function getUsers(){return DB.g('users',[]);}
-function saveUsers(u){DB.s('users',u);}
+function saveUsers(u){DB.s('users',u);FB.push();}
 function getPlaces(){return DB.g('places',[]);}
-function savePlaces(p){DB.s('places',p);}
+function savePlaces(p){DB.s('places',p);FB.push();}
 function hash(s){let h=0;for(let i=0;i<s.length;i++){h=(Math.imul(31,h)+s.charCodeAt(i))|0;}return h.toString(36);}
+
+/* ═══════════════════════════════════════════════
+   FIREBASE SYNC
+═══════════════════════════════════════════════ */
+const FB = {
+  get url(){return DB.g('fb_url','');},
+  _busy:false,
+  _pollTimer:null,
+
+  async push(){
+    const url=this.url; if(!url)return;
+    if(this._busy)return;
+    this._busy=true;
+    try{
+      const payload={users:getUsers(),places:getPlaces(),pushedAt:new Date().toISOString()};
+      await fetch(url+'/tj.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      showSyncStatus('☁️ 동기화 완료');
+    }catch(e){showSyncStatus('⚠️ 동기화 실패',true);}
+    finally{this._busy=false;}
+  },
+
+  async pull(){
+    const url=this.url; if(!url)return false;
+    try{
+      const r=await fetch(url+'/tj.json?t='+Date.now());
+      if(!r.ok)return false;
+      const d=await r.json();
+      if(!d)return false;
+      if(d.users&&Array.isArray(d.users))DB.s('users',d.users);
+      if(d.places&&Array.isArray(d.places))DB.s('places',d.places);
+      return true;
+    }catch(e){return false;}
+  },
+
+  startPoll(){
+    if(this._pollTimer)clearInterval(this._pollTimer);
+    if(!this.url)return;
+    this._pollTimer=setInterval(async()=>{
+      const ok=await this.pull();
+      if(ok&&ME){renderView();updateHeader();}
+    },30000);
+  },
+
+  stopPoll(){if(this._pollTimer){clearInterval(this._pollTimer);this._pollTimer=null;}}
+};
+
+function showSyncStatus(msg,warn=false){
+  let el=document.getElementById('sync-status');
+  if(!el){el=document.createElement('div');el.id='sync-status';document.body.appendChild(el);}
+  el.textContent=msg;
+  el.style.background=warn?'rgba(211,47,47,.8)':'rgba(0,0,0,.55)';
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+async function setSyncUrl(){
+  const inp=document.getElementById('fb-url-input');
+  let url=(inp?inp.value.trim():'').replace(/\/+$/,'');
+  if(!url){toast('연동 코드를 입력해주세요');return;}
+  // Firebase URL 검증
+  if(!url.startsWith('http')){toast('올바른 연동 코드 형식이 아닙니다');return;}
+  showSyncStatus('🔄 연결 중...');
+  try{
+    const r=await fetch(url+'/tj.json?t='+Date.now());
+    if(!r.ok)throw new Error('unreachable');
+    DB.s('fb_url',url);
+    const d=await r.json();
+    if(d&&d.users)DB.s('users',d.users);
+    if(d&&d.places)DB.s('places',d.places);
+    showSyncStatus('✅ 연동 완료!');
+    const help=document.getElementById('sync-help');
+    if(help)help.style.display='block';
+    FB.startPoll();
+    // 로그인 상태면 바로 화면 갱신
+    if(ME){renderView();updateHeader();}
+  }catch(e){
+    showSyncStatus('❌ 연결 실패 - URL을 확인해주세요',true);
+    toast('연결 실패: Firebase URL을 다시 확인해주세요');
+  }
+}
 
 /* ═══════════════════════════════════════════════
    AUTH STATE
@@ -2265,17 +2360,31 @@ function initPWA(){
 }
 
 /* INIT */
-function startApp(){
+function async startApp(){
   document.getElementById('auth').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
+  // Firebase에서 최신 데이터 pull
+  if(FB.url){
+    showSyncStatus('🔄 데이터 불러오는 중...');
+    await FB.pull();
+    FB.startPoll();
+  }
   updateHeader();
   MAP.init();
   navTo('map');
   initPWA();
 }
 
+// 로그인 화면에 기존 연동 코드 표시
 (function init(){
   switchTab('login');
+  const existingUrl=DB.g('fb_url','');
+  if(existingUrl){
+    const inp=document.getElementById('fb-url-input');
+    if(inp)inp.value=existingUrl;
+    const help=document.getElementById('sync-help');
+    if(help)help.style.display='block';
+  }
   const sid=DB.g('sid');
   if(sid){const u=getUsers().find(x=>x.id===sid);if(u){ME=u;startApp();return;}}
 })();
