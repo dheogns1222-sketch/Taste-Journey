@@ -306,6 +306,10 @@ nav{height:var(--nh);background:var(--sf);border-top:1px solid var(--bd);display
       <svg width="20" height="20" viewBox="0 0 24 24" fill="#000"><path d="M12 3C6.48 3 2 6.69 2 11.25c0 2.91 1.82 5.47 4.59 6.99L5.5 22l5.22-3.19c.41.06.83.09 1.28.09 5.52 0 10-3.69 10-8.25C22 6.69 17.52 3 12 3z"/></svg>
       <span id="kakao-btn-label">카카오로 로그인</span>
     </button>
+    <label style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--sub);cursor:pointer;margin-top:8px">
+      <input type="checkbox" id="remember-me" checked style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer">
+      로그인 상태 유지
+    </label>
   </div>
 
 
@@ -877,18 +881,19 @@ function handleStep(){handleKakaoStep();}
 
 function doKakaoLogin(){
   const restKey=DB.g('kakao_rest_key','')||'2555299e1c4bc22a9ec366758ed74265';
-  if(!restKey){showAuthError('카카오 REST API 키가 없습니다. 어드민에게 문의하세요.');return;}
-  // 초대코드/탭 상태 임시 저장
+  const rememberMe=(document.getElementById('remember-me')||{checked:true}).checked;
+  sessionStorage.setItem('tj_remember_me',rememberMe?'1':'0');
   if(_pendingInviteCode)sessionStorage.setItem('tj_kakao_code',_pendingInviteCode);
-  // 카카오 OAuth 인가 코드 flow (authorization code — REST API 키 사용)
   sessionStorage.setItem('tj_kakao_flow','1');
   const redirectUri=location.origin+location.pathname.replace(/\/$/,'')||location.origin;
   showAuthError('카카오로 이동 중...');
   setTimeout(()=>{
-    location.href='https://kauth.kakao.com/oauth/authorize'
+    let authUrl='https://kauth.kakao.com/oauth/authorize'
       +'?client_id='+encodeURIComponent(restKey)
       +'&redirect_uri='+encodeURIComponent(redirectUri)
-      +'&response_type=code'
+      +'&response_type=code';
+    if(!rememberMe)authUrl+='&prompt=login';
+    location.href=authUrl;
   },300);
 }
 
@@ -898,7 +903,10 @@ async function handleKakaoAuth(kakaoId,kakaoNickname,kakaoProfileImage){
   const users=getUsers();
   // 1. 이미 연동된 계정
   const existing=users.find(u=>u.kakaoId===kakaoId);
-  if(existing){ME=existing;DB.s('sid',ME.id);startApp();return;}
+  if(existing){ME=existing;
+    if(sessionStorage.getItem('tj_remember_me')!=='0')DB.s('sid',ME.id);
+    else{DB.d('sid');sessionStorage.setItem('tj_sid',ME.id);}
+    startApp();return;}
   // 2. 초대코드 신규 가입
   if(_pendingInviteCode){
     const newId=Date.now().toString();
@@ -907,6 +915,8 @@ async function handleKakaoAuth(kakaoId,kakaoNickname,kakaoProfileImage){
     const role=codeType==='partner'?'PARTNER':'GUEST';
     const nu={id:newId,username:kakaoNickname,kakaoId,kakaoNickname,kakaoProfileImage,profileChoice:'kakao',role,nickname:kakaoNickname,avatar:emojiForRole(role),createdAt:new Date().toISOString()};
     users.push(nu);saveUsers(users);ME=nu;
+    if(sessionStorage.getItem('tj_remember_me')!=='0')DB.s('sid',ME.id);
+    else{DB.d('sid');sessionStorage.setItem('tj_sid',ME.id);}
     showProfileSelect();return;
   }
   // 3. 기존 계정 연동 필요
@@ -3125,7 +3135,7 @@ async function exchangeKakaoCode(code){
   }
 
   // ③ Firebase URL은 하드코딩으로 자동 연동됨
-  const sid=DB.g('sid');
+  const sid=DB.g('sid')||sessionStorage.getItem('tj_sid');
   if(sid){const u=getUsers().find(x=>x.id===sid);if(u){ME=u;startApp();return;}}
 })();
 
