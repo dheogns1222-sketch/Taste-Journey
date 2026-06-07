@@ -3081,18 +3081,15 @@ async function exchangeKakaoCode(code){
     const data=await res.json();
     if(!data.access_token){showAuthError('카카오 토큰 오류: '+(data.error_description||data.error||'알 수 없는 오류'));return;}
     Kakao.Auth.setAccessToken(data.access_token);
-    Kakao.API.request({
-      url:'/v2/user/me',
-      success:async function(r){
-        showAuthError('');
-        const kakaoId=String(r.id);
-        const profile=r.kakao_account&&r.kakao_account.profile;
-        const nickname=(profile&&profile.nickname)||'사용자';
-        const profileImage=(profile&&profile.profile_image_url)||'';
-        await handleKakaoAuth(kakaoId,nickname,profileImage);
-      },
-      fail:function(err){showAuthError('카카오 프로필 조회 실패. 다시 시도해주세요.');console.error(err);}
-    });
+    try{
+      const r=await Kakao.API.request({url:'/v2/user/me'});
+      showAuthError('');
+      const kakaoId=String(r.id);
+      const profile=r.kakao_account&&r.kakao_account.profile;
+      const nickname=(profile&&profile.nickname)||'사용자';
+      const profileImage=(profile&&profile.profile_image_url)||'';
+      await handleKakaoAuth(kakaoId,nickname,profileImage);
+    }catch(err){showAuthError('카카오 프로필 조회 실패. 다시 시도해주세요.');console.error(err);}
   }catch(e){showAuthError('카카오 연결 오류: '+e.message);}
 }
 
@@ -3118,24 +3115,4 @@ async function exchangeKakaoCode(code){
     return;
   }
 
-  // ② URL 파라미터 파싱 (초대 링크 / fburl)
-  if(fbParam&&!DB.g('fb_url','')){DB.s('fb_url',fbParam);}
-  switchTab('login');
-  if(codeParam){
-    const invEl=document.getElementById('invite-input');
-    if(invEl)invEl.value=codeParam;
-    switchTab('signup');
-  }
-
-  // ③ Firebase URL은 하드코딩으로 자동 연동됨
-  const sid=DB.g('sid');
-  if(sid){const u=getUsers().find(x=>x.id===sid);if(u){ME=u;startApp();return;}}
-})();
-
-document.addEventListener('click',e=>{
-  if(!e.target.closest('#f-name')&&!e.target.closest('#name-drop')){const nd=document.getElementById('name-drop');if(nd)nd.classList.add('hidden');}
-  if(!e.target.closest('.map-search-bar')){const d=document.getElementById('map-drop');if(d)d.classList.add('hidden');}
-});
-</script>
-</body>
-</html>
+  // ② URL 파라미터 파�
