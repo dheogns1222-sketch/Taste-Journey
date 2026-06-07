@@ -292,8 +292,8 @@ nav{height:var(--nh);background:var(--sf);border-top:1px solid var(--bd);display
       <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">회원가입</button>
     </div>
     <input type="text" id="invite-input" placeholder="초대 코드를 입력해주세요" autocomplete="off" style="display:none">
-    <input type="text" id="au" placeholder="아이디" autocomplete="username">
-    <input type="password" id="ap" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')handleAuth()">
+    <input type="text" id="au" placeholder="아이디" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <input type="password" id="ap" placeholder="비밀번호" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')handleAuth()">
     <div class="auth-note hidden" id="auth-note"></div>
     <div id="auth-error" style="color:#e53935;font-size:12px;font-weight:600;text-align:center;min-height:18px;margin:-4px 0 2px;padding:0 4px"></div>
     <button class="auth-btn" onclick="handleStep()" id="auth-submit">로그인</button>
