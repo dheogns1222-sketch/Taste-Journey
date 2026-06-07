@@ -3115,4 +3115,24 @@ async function exchangeKakaoCode(code){
     return;
   }
 
-  // ② URL 파라미터 파�
+  // ② URL 파라미터 파싱 (초대 링크 / fburl)
+  if(fbParam&&!DB.g('fb_url','')){DB.s('fb_url',fbParam);}
+  switchTab('login');
+  if(codeParam){
+    const invEl=document.getElementById('invite-input');
+    if(invEl)invEl.value=codeParam;
+    switchTab('signup');
+  }
+
+  // ③ Firebase URL은 하드코딩으로 자동 연동됨
+  const sid=DB.g('sid');
+  if(sid){const u=getUsers().find(x=>x.id===sid);if(u){ME=u;startApp();return;}}
+})();
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#f-name')&&!e.target.closest('#name-drop')){const nd=document.getElementById('name-drop');if(nd)nd.classList.add('hidden');}
+  if(!e.target.closest('.map-search-bar')){const d=document.getElementById('map-drop');if(d)d.classList.add('hidden');}
+});
+</script>
+</body>
+</html>
