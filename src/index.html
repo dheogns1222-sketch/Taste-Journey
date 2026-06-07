@@ -876,17 +876,17 @@ async function handleKakaoStep(){
 function handleStep(){handleKakaoStep();}
 
 function doKakaoLogin(){
-  const jsKey=DB.g('kakao_js_key','');
-  if(!jsKey){showAuthError('카카오 설정 키가 없습니다. 어드민에게 문의하세요.');return;}
+  const restKey=DB.g('kakao_rest_key','');
+  if(!restKey){showAuthError('카카오 REST API 키가 없습니다. 어드민에게 문의하세요.');return;}
   // 초대코드/탭 상태 임시 저장
   if(_pendingInviteCode)sessionStorage.setItem('tj_kakao_code',_pendingInviteCode);
-  // 카카오 OAuth 인가 코드 flow (authorization code)
+  // 카카오 OAuth 인가 코드 flow (authorization code — REST API 키 사용)
   sessionStorage.setItem('tj_kakao_flow','1');
   const redirectUri=location.origin;
   showAuthError('카카오로 이동 중...');
   setTimeout(()=>{
     location.href='https://kauth.kakao.com/oauth/authorize'
-      +'?client_id='+encodeURIComponent(jsKey)
+      +'?client_id='+encodeURIComponent(restKey)
       +'&redirect_uri='+encodeURIComponent(redirectUri)
       +'&response_type=code'
       +'&prompt=login';
@@ -3061,9 +3061,11 @@ async function startApp(){
 }
 
 async function exchangeKakaoCode(code){
+  const restKey=DB.g('kakao_rest_key','');
   const jsKey=DB.g('kakao_js_key','');
-  if(!jsKey||!window.Kakao){showAuthError('카카오 키가 없습니다. 어드민에게 문의하세요.');return;}
-  try{if(!Kakao.isInitialized())Kakao.init(jsKey);}catch(e){showAuthError('카카오 초기화 오류');return;}
+  if(!restKey){showAuthError('카카오 REST API 키가 없습니다. 어드민에게 문의하세요.');return;}
+  if(!window.Kakao){showAuthError('카카오 SDK가 로드되지 않았습니다.');return;}
+  try{if(!Kakao.isInitialized()&&jsKey)Kakao.init(jsKey);}catch(e){}
   const redirectUri=location.origin;
   try{
     const res=await fetch('https://kauth.kakao.com/oauth/token',{
@@ -3071,7 +3073,7 @@ async function exchangeKakaoCode(code){
       headers:{'Content-Type':'application/x-www-form-urlencoded;charset=utf-8'},
       body:new URLSearchParams({
         grant_type:'authorization_code',
-        client_id:jsKey,
+        client_id:restKey,
         redirect_uri:redirectUri,
         code:code
       })
@@ -3117,4 +3119,23 @@ async function exchangeKakaoCode(code){
   }
 
   // ② URL 파라미터 파싱 (초대 링크 / fburl)
-  if(fbParam&&!DB.g('fb_url','')){DB.s('fb_url'
+  if(fbParam&&!DB.g('fb_url','')){DB.s('fb_url',fbParam);}
+  switchTab('login');
+  if(codeParam){
+    const invEl=document.getElementById('invite-input');
+    if(invEl)invEl.value=codeParam;
+    switchTab('signup');
+  }
+
+  // ③ Firebase URL은 하드코딩으로 자동 연동됨
+  const sid=DB.g('sid');
+  if(sid){const u=getUsers().find(x=>x.id===sid);if(u){ME=u;startApp();return;}}
+})();
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#f-name')&&!e.target.closest('#name-drop')){const nd=document.getElementById('name-drop');if(nd)nd.classList.add('hidden');}
+  if(!e.target.closest('.map-search-bar')){const d=document.getElementById('map-drop');if(d)d.classList.add('hidden');}
+});
+</script>
+</body>
+</html>
