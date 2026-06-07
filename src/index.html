@@ -1053,11 +1053,6 @@ const MAP = {
       this.canvas.style.display='none';
       mapDiv.style.display='block';
       this._kakaoMap=new kakao.maps.Map(mapDiv,{center:new kakao.maps.LatLng(this.lat,this.lng),level:5});
-      // 실제 지도 타일이 로드되는지 확인 (도메인 미등록 시 idle 안 뜰 수 있음)
-      await new Promise((resolve,reject)=>{
-        const t=setTimeout(()=>reject(new Error('map idle timeout')),6000);
-        kakao.maps.event.addListener(this._kakaoMap,'idle',()=>{clearTimeout(t);resolve();});
-      });
       this._useKakao=true;
       kakao.maps.event.addListener(this._kakaoMap,'dblclick',e=>{
         const ll=e.latLng;openAddModal({lat:ll.getLat(),lng:ll.getLng()},false);
