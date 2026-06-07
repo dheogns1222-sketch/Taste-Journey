@@ -1,0 +1,41 @@
+<svg width="512" height="512" viewBox="0 0 680 680" role="img" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+    <stop offset="0%" stop-color="#3d2000" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#000000" stop-opacity="1"/>
+  </radialGradient>
+  <radialGradient id="goldGlow" cx="50%" cy="40%" r="50%">
+    <stop offset="0%" stop-color="#f5c842"/>
+    <stop offset="60%" stop-color="#d4a017"/>
+    <stop offset="100%" stop-color="#a07800"/>
+  </radialGradient>
+  <radialGradient id="plateGrad" cx="50%" cy="40%" r="50%">
+    <stop offset="0%" stop-color="#2e1a00"/>
+    <stop offset="100%" stop-color="#1a0e00"/>
+  </radialGradient>
+</defs>
+<rect width="680" height="680" rx="152" fill="#1a0e00"/>
+<rect width="680" height="680" rx="152" fill="url(#vignette)" opacity="0.4"/>
+<circle cx="340" cy="320" r="155" fill="url(#plateGrad)" stroke="#c49a00" stroke-width="2.5"/>
+<circle cx="340" cy="320" r="136" fill="none" stroke="#d4a017" stroke-width="1" opacity="0.4"/>
+<g transform="translate(258, 140) rotate(-10, 22, 160)">
+  <rect x="16" y="195" width="12" height="100" rx="6" fill="url(#goldGlow)"/>
+  <rect x="18" y="145" width="8" height="56" rx="4" fill="url(#goldGlow)"/>
+  <rect x="13" y="116" width="18" height="34" rx="3" fill="url(#goldGlow)"/>
+  <rect x="11" y="68" width="4" height="54" rx="2" fill="url(#goldGlow)"/>
+  <rect x="17" y="66" width="4" height="54" rx="2" fill="url(#goldGlow)"/>
+  <rect x="23" y="66" width="4" height="54" rx="2" fill="url(#goldGlow)"/>
+  <rect x="29" y="68" width="4" height="54" rx="2" fill="url(#goldGlow)"/>
+</g>
+<g transform="translate(390, 140) rotate(10, 18, 160)">
+  <rect x="11" y="195" width="12" height="100" rx="6" fill="url(#goldGlow)"/>
+  <rect x="13" y="145" width="8" height="56" rx="4" fill="url(#goldGlow)"/>
+  <path d="M13 145 L13 70 Q13 60 24 66 Q30 78 21 145 Z" fill="url(#goldGlow)"/>
+</g>
+<path d="M340 392 C340 392 294 360 282 333 C270 306 277 280 297 274 C312 269 327 279 340 294 C353 279 368 269 383 274 C403 280 410 306 398 333 C386 360 340 392 340 392 Z" fill="url(#goldGlow)" opacity="0.95"/>
+<path d="M300 286 Q295 298 298 310" stroke="#fff8e0" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.35"/>
+<line x1="160" y1="488" x2="520" y2="488" stroke="#c49a00" stroke-width="0.8" opacity="0.5"/>
+<text x="340" y="536" font-family="Georgia, serif" font-size="52" font-weight="700" fill="#d4a017" text-anchor="middle" letter-spacing="2">Taste</text>
+<text x="340" y="596" font-family="Georgia, serif" font-size="52" font-weight="700" fill="#d4a017" text-anchor="middle" letter-spacing="2">Journey</text>
+<text x="340" y="634" font-family="Georgia, serif" font-size="18" fill="#8a6200" text-anchor="middle" letter-spacing="3">커플 맛집 투어 기록</text>
+</svg>
