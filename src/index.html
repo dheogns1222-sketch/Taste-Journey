@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Taste Journey">
 <title>Taste Journey 🍽️</title>
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
 <style>
 :root{
   --bg:#F6F1EB;--sf:#EDE5D8;--sf2:#E0D4C4;
@@ -273,6 +274,13 @@ nav{height:var(--nh);background:var(--sf);border-top:1px solid var(--bd);display
 @keyframes nblink{0%,100%{opacity:1}50%{opacity:.6}}
 /* Avatar picker */
 .avatar-opts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:12px 0}
+.kakao-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:#FEE500;color:#000;border-radius:10px;padding:13px;font-size:15px;font-weight:700;width:100%;border:none;cursor:pointer;transition:.15s}
+.kakao-btn:hover{background:#e6cf00}
+.kakao-btn:active{transform:scale(.98)}
+.profile-opt{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 20px;border-radius:14px;border:2px solid var(--bd);background:var(--sf2);cursor:pointer;transition:.15s;min-width:110px}
+.profile-opt:hover,.profile-opt:active{border-color:var(--pr);background:var(--sf)}
+.kakao-avatar{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #FEE500}
+.h-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.6)}
 .avatar-opt{font-size:28px;width:48px;height:48px;border-radius:50%;border:2px solid var(--bd);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;background:var(--sf2)}
 .avatar-opt.active,.avatar-opt:active{border-color:var(--pr);background:var(--sf);transform:scale(1.08)}
 .avatar-photo{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--pr)}
@@ -291,15 +299,55 @@ nav{height:var(--nh);background:var(--sf);border-top:1px solid var(--bd);display
       <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">로그인</button>
       <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">회원가입</button>
     </div>
-    <input type="text" id="invite-input" placeholder="초대 코드를 입력해주세요" autocomplete="off" style="display:none">
-    <input type="text" id="au" placeholder="아이디" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
-    <input type="password" id="ap" placeholder="비밀번호" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')handleAuth()">
+    <input type="text" id="invite-input" placeholder="초대 코드를 입력해주세요" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="display:none">
     <div class="auth-note hidden" id="auth-note"></div>
     <div id="auth-error" style="color:#e53935;font-size:12px;font-weight:600;text-align:center;min-height:18px;margin:-4px 0 2px;padding:0 4px"></div>
-    <button class="auth-btn" onclick="handleStep()" id="auth-submit">로그인</button>
+    <button class="kakao-btn" onclick="handleKakaoStep()" id="kakao-submit">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#000"><path d="M12 3C6.48 3 2 6.69 2 11.25c0 2.91 1.82 5.47 4.59 6.99L5.5 22l5.22-3.19c.41.06.83.09 1.28.09 5.52 0 10-3.69 10-8.25C22 6.69 17.52 3 12 3z"/></svg>
+      <span id="kakao-btn-label">카카오로 로그인</span>
+    </button>
   </div>
 
 
+</div>
+
+<!-- 기존 계정 연동 모달 -->
+<div class="overlay hidden" id="migrate-modal" style="z-index:1100;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)">
+  <div class="modal" style="max-width:360px;width:calc(100% - 32px);border-radius:20px;overflow:hidden">
+    <div class="modal-head" style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd)">
+      <span style="font-weight:700;font-size:16px">🔗 기존 계정 연동</span>
+      <button class="close-btn" onclick="closeMigrateModal()">✕</button>
+    </div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:12px">
+      <p style="font-size:13px;color:var(--tx2);text-align:center;line-height:1.5">카카오 계정을 기존 아이디에 연동합니다.<br>기존 아이디와 비밀번호를 입력해주세요.</p>
+      <input type="text" id="mig-id" placeholder="기존 아이디" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <input type="password" id="mig-pw" placeholder="기존 비밀번호" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')doMigrate()">
+      <div id="mig-error" style="color:#e53935;font-size:12px;font-weight:600;text-align:center;min-height:16px"></div>
+      <button onclick="doMigrate()" style="background:var(--pr);color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:700;width:100%">연동하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 프로필 선택 모달 -->
+<div class="overlay hidden" id="profile-select-modal" style="z-index:1100;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)">
+  <div class="modal" style="max-width:360px;width:calc(100% - 32px);border-radius:20px;overflow:hidden">
+    <div class="modal-head" style="padding:16px 20px;border-bottom:1px solid var(--bd)">
+      <span style="font-weight:700;font-size:16px">✨ 프로필 선택</span>
+    </div>
+    <div style="padding:24px;display:flex;flex-direction:column;align-items:center;gap:20px">
+      <p style="font-size:13px;color:var(--tx2);text-align:center">앱에서 사용할 프로필 이미지를 선택하세요</p>
+      <div style="display:flex;gap:16px;justify-content:center">
+        <div class="profile-opt" id="prof-kakao-opt" onclick="selectProfile('kakao')" style="display:none">
+          <img id="prof-kakao-img" class="kakao-avatar" src="" alt="카카오" onerror="this.parentElement.style.display='none'">
+          <span style="font-size:12px;font-weight:700;color:var(--tx2)">카카오 사진</span>
+        </div>
+        <div class="profile-opt" id="prof-emoji-opt" onclick="selectProfile('emoji')">
+          <span id="prof-emoji-display" style="font-size:52px;line-height:1.1">👑</span>
+          <span style="font-size:12px;font-weight:700;color:var(--tx2)">이모티콘</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- APP -->
@@ -766,34 +814,37 @@ function switchTab(t){
   document.getElementById('tab-login').classList.toggle('active',t==='login');
   document.getElementById('tab-signup').classList.toggle('active',t==='signup');
   const invEl=document.getElementById('invite-input');
-  const auEl=document.getElementById('au');
-  const apEl=document.getElementById('ap');
-  const submitBtn=document.getElementById('auth-submit');
   const note=document.getElementById('auth-note');
   const errEl=document.getElementById('auth-error');
+  const btnLabel=document.getElementById('kakao-btn-label');
   if(errEl)errEl.textContent='';
   if(t==='signup'){
     if(invEl){invEl.style.display='';invEl.value='';}
-    if(auEl)auEl.style.display='none';
-    if(apEl)apEl.style.display='none';
-    submitBtn.textContent='초대 코드 확인 →';
-    submitBtn.style.background='var(--ac)';
+    if(btnLabel)btnLabel.textContent='초대 코드 확인 →';
     note.innerHTML='초대 코드를 입력해주세요.<br><small style="color:var(--tx3)">어드민에게 코드를 받아야 가입할 수 있습니다</small>';
     note.classList.remove('hidden');
   }else{
     if(invEl)invEl.style.display='none';
-    if(auEl){auEl.style.display='';auEl.value='';}
-    if(apEl){apEl.style.display='';apEl.value='';}
-    submitBtn.textContent='로그인';
-    submitBtn.style.background='';
+    if(btnLabel)btnLabel.textContent='카카오로 로그인';
     note.classList.add('hidden');
   }
 }
+// ─── Kakao 인증 관련 ─────────────────────────────────
+let _pendingKakao = null;
+let _kakaoInited = false;
 
-async function handleStep(){
-  if(authTab==='login'){handleAuth();return;}
-  if(_signupStep===1){
-    // 초대 코드 검증 단계
+function emojiForRole(role){
+  return role==='OWNER'?'👑':role==='PARTNER'?'💜':'⭐';
+}
+
+function showAuthError(msg){
+  const el=document.getElementById('auth-error');
+  if(el){el.textContent=msg;setTimeout(()=>{if(el.textContent===msg)el.textContent='';},4000);}
+  else toast(msg);
+}
+
+async function handleKakaoStep(){
+  if(authTab==='signup'&&_signupStep===1){
     const invEl=document.getElementById('invite-input');
     const code=(invEl?invEl.value.trim():'').toUpperCase();
     if(!code){showAuthError('초대 코드를 입력해주세요');return;}
@@ -806,73 +857,153 @@ async function handleStep(){
       found=codes.find(c=>c.code===code&&!c.used);
     }
     if(!found){showAuthError('유효하지 않은 초대 코드입니다. 다시 확인해주세요');return;}
-    // 코드 유효 — step 2로 전환
     _pendingInviteCode=code;
     _signupStep=2;
-    const auEl=document.getElementById('au');
-    const apEl=document.getElementById('ap');
-    const submitBtn=document.getElementById('auth-submit');
+    if(invEl)invEl.style.display='none';
     const note=document.getElementById('auth-note');
     const errEl=document.getElementById('auth-error');
-    if(invEl)invEl.style.display='none';
-    if(auEl){auEl.style.display='';auEl.focus();}
-    if(apEl)apEl.style.display='';
-    submitBtn.textContent='회원가입 완료';
-    submitBtn.style.background='var(--pr)';
-    const roleLabel=found.type==='partner'?'파트너 🐻':'게스트 👤';
-    note.innerHTML=`✅ 코드 확인 완료! <strong>${roleLabel}</strong>로 가입합니다.<br>사용할 아이디와 비밀번호를 입력하세요.`;
+    const btnLabel=document.getElementById('kakao-btn-label');
+    const roleLabel=found.type==='partner'?'파트너 💜':'게스트 ⭐';
+    note.innerHTML=`✅ 코드 확인 완료! <strong>${roleLabel}</strong>로 가입합니다.<br>카카오 계정으로 계속해주세요.`;
     note.classList.remove('hidden');
     if(errEl)errEl.textContent='';
-  }else{
-    handleAuth();
+    if(btnLabel)btnLabel.textContent='카카오로 계속하기';
+    return;
   }
+  doKakaoLogin();
+}
+// 하위 호환성
+function handleStep(){handleKakaoStep();}
+
+function doKakaoLogin(){
+  const jsKey=DB.g('kakao_js_key','');
+  if(!jsKey){showAuthError('카카오 설정 키가 없습니다. 어드민에게 문의하세요.');return;}
+  if(!window.Kakao){showAuthError('카카오 SDK 로드 중입니다. 잠시 후 다시 시도해주세요.');return;}
+  try{
+    if(!_kakaoInited||!Kakao.isInitialized()){Kakao.init(jsKey);_kakaoInited=true;}
+  }catch(e){showAuthError('카카오 초기화 실패: '+e.message);return;}
+  showAuthError('카카오 로그인 창을 여는 중...');
+  Kakao.Auth.login({
+    success:function(authObj){
+      showAuthError('');
+      Kakao.API.request({
+        url:'/v2/user/me',
+        success:async function(res){
+          const kakaoId=String(res.id);
+          const profile=res.kakao_account&&res.kakao_account.profile;
+          const kakaoNickname=(profile&&profile.nickname)||'사용자';
+          const kakaoProfileImage=(profile&&profile.profile_image_url)||'';
+          await handleKakaoAuth(kakaoId,kakaoNickname,kakaoProfileImage);
+        },
+        fail:function(err){showAuthError('프로필 조회 실패. 다시 시도해주세요.');console.error(err);}
+      });
+    },
+    fail:function(err){
+      if(err&&err.error!=='access_denied')showAuthError('카카오 로그인 실패. 다시 시도해주세요.');
+      else showAuthError('');
+      console.error(err);
+    }
+  });
 }
 
-function showAuthError(msg){
-  const el=document.getElementById('auth-error');
-  if(el){el.textContent=msg;setTimeout(()=>{el.textContent='';},4000);}
-  else toast(msg);
-}
-async function handleAuth() {
-  const u = document.getElementById('au').value.trim();
-  const p = document.getElementById('ap').value;
-  const errEl=document.getElementById('auth-error');
-  if(errEl)errEl.textContent='';
-  if(!u || !p) { showAuthError('아이디와 비밀번호를 입력해주세요'); return; }
-  const users = getUsers();
-  if(authTab==='signup'){
-    if(FB.url){showSyncStatus('🔄 연동 중...');await FB.pull();}
-    const freshUsers=getUsers();
-    if(freshUsers.find(x=>x.username===u)){showAuthError('이미 사용 중인 아이디입니다');return;}
+async function handleKakaoAuth(kakaoId,kakaoNickname,kakaoProfileImage){
+  _pendingKakao={kakaoId,kakaoNickname,kakaoProfileImage};
+  if(FB.url)await FB.pull();
+  const users=getUsers();
+  // 1. 이미 연동된 계정
+  const existing=users.find(u=>u.kakaoId===kakaoId);
+  if(existing){ME=existing;DB.s('sid',ME.id);startApp();return;}
+  // 2. 초대코드 신규 가입
+  if(_pendingInviteCode){
     const newId=Date.now().toString();
     const codeType=useInviteCode(_pendingInviteCode,newId);
-    if(!codeType){showAuthError('초대 코드 오류. 처음부터 다시 시도해주세요');return;}
+    if(!codeType){showAuthError('초대 코드 오류. 처음부터 다시 시도해주세요.');return;}
     const role=codeType==='partner'?'PARTNER':'GUEST';
-    const nu={id:newId,username:u,password:hash(p),role,nickname:u,avatar:role==='PARTNER'?'🐻':'👤',createdAt:new Date().toISOString()};
-    freshUsers.push(nu);saveUsers(freshUsers);ME=nu;
-    toast(role==='PARTNER'?'파트너 계정이 생성되었습니다 🐻':'게스트 계정이 생성되었습니다 👤');
-  } else {
-    const found=users.find(x=>x.username===u&&x.password===hash(p));
-    if(!found){showAuthError('아이디 또는 비밀번호가 틀렸습니다');return;}
-    ME=found;
+    const nu={id:newId,username:kakaoNickname,kakaoId,kakaoNickname,kakaoProfileImage,profileChoice:'kakao',role,nickname:kakaoNickname,avatar:emojiForRole(role),createdAt:new Date().toISOString()};
+    users.push(nu);saveUsers(users);ME=nu;
+    showProfileSelect();return;
   }
-  DB.s('sid',ME.id); startApp();
+  // 3. 기존 계정 연동 필요
+  showMigrateModal();
 }
 
-function guestLogin() {
-  ME = {id:'guest',username:'게스트',role:'GUEST',createdAt:''};
+function showMigrateModal(){
+  const m=document.getElementById('migrate-modal');
+  if(m)m.classList.remove('hidden');
+}
+function closeMigrateModal(){
+  const m=document.getElementById('migrate-modal');
+  if(m)m.classList.add('hidden');
+  const mi=document.getElementById('mig-id');const mp=document.getElementById('mig-pw');
+  if(mi)mi.value='';if(mp)mp.value='';
+  const me=document.getElementById('mig-error');if(me)me.textContent='';
+}
+async function doMigrate(){
+  const idEl=document.getElementById('mig-id');
+  const pwEl=document.getElementById('mig-pw');
+  const errEl=document.getElementById('mig-error');
+  const id=(idEl?idEl.value.trim():'');
+  const pw=(pwEl?pwEl.value:'');
+  if(!id||!pw){if(errEl)errEl.textContent='아이디와 비밀번호를 입력해주세요';return;}
+  if(FB.url)await FB.pull();
+  const users=getUsers();
+  const found=users.find(u=>u.username===id&&u.password===hash(pw));
+  if(!found){if(errEl)errEl.textContent='아이디 또는 비밀번호가 틀렸습니다';return;}
+  const {kakaoId,kakaoNickname,kakaoProfileImage}=_pendingKakao||{};
+  found.kakaoId=kakaoId;
+  found.kakaoNickname=kakaoNickname;
+  found.kakaoProfileImage=kakaoProfileImage;
+  if(!found.profileChoice)found.profileChoice='emoji';
+  saveUsers(users);ME=found;
+  closeMigrateModal();
+  showProfileSelect();
+}
+
+function showProfileSelect(){
+  document.getElementById('auth').classList.add('hidden');
+  const modal=document.getElementById('profile-select-modal');
+  if(!modal)return;
+  const emojiEl=document.getElementById('prof-emoji-display');
+  const imgEl=document.getElementById('prof-kakao-img');
+  const kakaoOpt=document.getElementById('prof-kakao-opt');
+  const emoji=emojiForRole(ME.role);
+  if(emojiEl)emojiEl.textContent=emoji;
+  const imgUrl=(_pendingKakao&&_pendingKakao.kakaoProfileImage)||(ME.kakaoProfileImage||'');
+  if(imgEl&&imgUrl){imgEl.src=imgUrl;if(kakaoOpt)kakaoOpt.style.display='';}
+  else if(kakaoOpt){kakaoOpt.style.display='none';}
+  modal.classList.remove('hidden');
+}
+function selectProfile(choice){
+  if(!ME)return;
+  const users=getUsers();
+  const u=users.find(x=>x.id===ME.id);
+  const imgUrl=(_pendingKakao&&_pendingKakao.kakaoProfileImage)||(ME.kakaoProfileImage||'');
+  if(u){
+    u.profileChoice=choice;
+    u.avatar=choice==='kakao'&&imgUrl?imgUrl:emojiForRole(ME.role);
+    if(choice==='kakao'&&imgUrl){u.kakaoProfileImage=imgUrl;}
+    saveUsers(users);ME=u;
+  }
+  document.getElementById('profile-select-modal').classList.add('hidden');
+  _pendingKakao=null;
+  DB.s('sid',ME.id);
   startApp();
 }
 
-function logout() {
-  ME = null; DB.d('sid');
+function guestLogin(){
+  ME={id:'guest',username:'게스트',role:'GUEST',createdAt:''};
+  startApp();
+}
+
+function logout(){
+  ME=null;DB.d('sid');
   FB.stopPoll();
   document.querySelectorAll('.overlay:not(.hidden)').forEach(el=>{el.classList.add('hidden');});
   document.body.classList.remove('modal-open');
   document.body.style.top='';
   document.getElementById('app').classList.add('hidden');
   document.getElementById('auth').classList.remove('hidden');
-  document.getElementById('au').value=''; document.getElementById('ap').value='';
+  _pendingKakao=null;_pendingInviteCode='';_signupStep=1;
   switchTab('login');
 }
 
@@ -2088,10 +2219,11 @@ function renderProfile(){
   const visited=places.filter(p=>(p.type||p.status)!=='wish');
   const wish=places.filter(p=>(p.type||p.status)==='wish'||(p.type||p.status)==='wishlist');
   const role=C.ROLE_LBL[ME.role]||ME.role;
-  const avatarDisplay=ME.role==='OWNER'?'🐶':ME.role==='PARTNER'?'🐻':(ME.avatar&&ME.avatar.startsWith('data:'))?null:(ME.avatar||'👤');
-  const avatarHTML=(!avatarDisplay&&ME.avatar)?
-    `<img class="avatar-photo" src="${ME.avatar}" style="width:68px;height:68px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.5)">`:
-    `<div class="profile-avatar" style="font-size:56px">${avatarDisplay}</div>`;
+  const _avIsImg=ME.avatar&&(ME.avatar.startsWith('data:')||ME.avatar.startsWith('http'));
+  const _avEmoji=emojiForRole(ME.role);
+  const avatarHTML=_avIsImg?
+    `<img class="avatar-photo" src="${ME.avatar}" style="width:68px;height:68px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.5)">`):
+    `<div class="profile-avatar" style="font-size:56px">${ME.avatar&&!_avIsImg?ME.avatar:_avEmoji}</div>`;
 
   // Kakao keys (OWNER only)
   const kakaoRK=DB.g('kakao_rest_key','');const kakaoJK=DB.g('kakao_js_key','');
@@ -2913,6 +3045,11 @@ function updateHeader(){
   const partner=others.find(u=>u.role==='PARTNER');
   const name=partner?`❤️ ${ME.nickname||ME.username} & ${partner.nickname||partner.username}`:'';
   const el=document.getElementById('h-couple');if(el)el.textContent=name;
+  const pbtn=document.getElementById('h-profile-btn');
+  if(pbtn){
+    const avIsImg=ME.avatar&&(ME.avatar.startsWith('data:')||ME.avatar.startsWith('http'));
+    pbtn.innerHTML=avIsImg?`<img class="h-avatar" src="${ME.avatar}" alt="">`:ME.avatar||'👤';
+  }
 }
 
 function initPWA(){
