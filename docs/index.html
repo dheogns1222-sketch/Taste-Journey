@@ -880,14 +880,15 @@ function doKakaoLogin(){
   if(!jsKey){showAuthError('카카오 설정 키가 없습니다. 어드민에게 문의하세요.');return;}
   // 초대코드/탭 상태 임시 저장
   if(_pendingInviteCode)sessionStorage.setItem('tj_kakao_code',_pendingInviteCode);
-  // 카카오 OAuth implicit flow (access_token → URL 해시)
+  // 카카오 OAuth 인가 코드 flow (authorization code)
+  sessionStorage.setItem('tj_kakao_flow','1');
   const redirectUri=location.origin;
   showAuthError('카카오로 이동 중...');
   setTimeout(()=>{
     location.href='https://kauth.kakao.com/oauth/authorize'
       +'?client_id='+encodeURIComponent(jsKey)
       +'&redirect_uri='+encodeURIComponent(redirectUri)
-      +'&response_type=token'
+      +'&response_type=code'
       +'&prompt=login';
   },300);
 }
@@ -3059,60 +3060,61 @@ async function startApp(){
   updateHeader();MAP.init();navTo('map');initPWA();
 }
 
+async function exchangeKakaoCode(code){
+  const jsKey=DB.g('kakao_js_key','');
+  if(!jsKey||!window.Kakao){showAuthError('카카오 키가 없습니다. 어드민에게 문의하세요.');return;}
+  try{if(!Kakao.isInitialized())Kakao.init(jsKey);}catch(e){showAuthError('카카오 초기화 오류');return;}
+  const redirectUri=location.origin;
+  try{
+    const res=await fetch('https://kauth.kakao.com/oauth/token',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded;charset=utf-8'},
+      body:new URLSearchParams({
+        grant_type:'authorization_code',
+        client_id:jsKey,
+        redirect_uri:redirectUri,
+        code:code
+      })
+    });
+    const data=await res.json();
+    if(!data.access_token){showAuthError('카카오 토큰 오류: '+(data.error_description||data.error||'알 수 없는 오류'));return;}
+    Kakao.Auth.setAccessToken(data.access_token);
+    Kakao.API.request({
+      url:'/v2/user/me',
+      success:async function(r){
+        showAuthError('');
+        const kakaoId=String(r.id);
+        const profile=r.kakao_account&&r.kakao_account.profile;
+        const nickname=(profile&&profile.nickname)||'사용자';
+        const profileImage=(profile&&profile.profile_image_url)||'';
+        await handleKakaoAuth(kakaoId,nickname,profileImage);
+      },
+      fail:function(err){showAuthError('카카오 프로필 조회 실패. 다시 시도해주세요.');console.error(err);}
+    });
+  }catch(e){showAuthError('카카오 연결 오류: '+e.message);}
+}
+
 (function init(){
-  // ① 카카오 OAuth 콜백 처리 (access_token in hash — 최우선)
-  const _hash=location.hash.slice(1);
-  if(_hash.includes('access_token')){
-    const hp=new URLSearchParams(_hash);
-    const kakaoToken=hp.get('access_token');
-    if(kakaoToken){
-      history.replaceState(null,null,location.pathname||'/');
-      const pendingCode=sessionStorage.getItem('tj_kakao_code')||'';
-      if(pendingCode){_pendingInviteCode=pendingCode;sessionStorage.removeItem('tj_kakao_code');}
-      switchTab('login');
-      showAuthError('카카오 프로필 불러오는 중...');
-      (async()=>{
-        if(FB.url)await FB.pull();
-        const jsKey=DB.g('kakao_js_key','');
-        if(!jsKey||!window.Kakao){showAuthError('카카오 키가 없습니다. 어드민에게 문의하세요.');return;}
-        try{if(!Kakao.isInitialized())Kakao.init(jsKey);}catch(e){showAuthError('카카오 초기화 오류');return;}
-        Kakao.Auth.setAccessToken(kakaoToken);
-        Kakao.API.request({
-          url:'/v2/user/me',
-          success:async function(res){
-            showAuthError('');
-            const kakaoId=String(res.id);
-            const profile=res.kakao_account&&res.kakao_account.profile;
-            const nickname=(profile&&profile.nickname)||'사용자';
-            const profileImage=(profile&&profile.profile_image_url)||'';
-            await handleKakaoAuth(kakaoId,nickname,profileImage);
-          },
-          fail:function(err){showAuthError('카카오 프로필 조회 실패. 다시 시도해주세요.');console.error(err);}
-        });
-      })();
-      return;
-    }
-  }
-  // ② URL 파라미터 파싱 (초대 링크)
   const urlP=new URLSearchParams(location.search);
   const fbParam=urlP.get('fburl');
   const codeParam=urlP.get('code');
-  if(fbParam&&!DB.g('fb_url','')){DB.s('fb_url',fbParam);}
-  switchTab('login');
-  if(codeParam){
-    const invEl=document.getElementById('invite-input');
-    if(invEl)invEl.value=codeParam;
-    switchTab('signup');
-  }
-  // ③ Firebase URL은 하드코딩으로 자동 연동됨
-  const sid=DB.g('sid');
-  if(sid){const u=getUsers().find(x=>x.id===sid);if(u){ME=u;startApp();return;}}
-})();
 
-document.addEventListener('click',e=>{
-  if(!e.target.closest('#f-name')&&!e.target.closest('#name-drop')){const nd=document.getElementById('name-drop');if(nd)nd.classList.add('hidden');}
-  if(!e.target.closest('.map-search-bar')){const d=document.getElementById('map-drop');if(d)d.classList.add('hidden');}
-});
-</script>
-</body>
-</html>
+  // ① 카카오 OAuth 콜백 처리 (authorization code flow — 최우선)
+  const isKakaoFlow=sessionStorage.getItem('tj_kakao_flow')==='1';
+  if(codeParam&&isKakaoFlow){
+    sessionStorage.removeItem('tj_kakao_flow');
+    history.replaceState(null,null,location.pathname||'/');
+    const pendingCode=sessionStorage.getItem('tj_kakao_code')||'';
+    if(pendingCode){_pendingInviteCode=pendingCode;sessionStorage.removeItem('tj_kakao_code');}
+    if(fbParam&&!DB.g('fb_url','')){DB.s('fb_url',fbParam);}
+    switchTab('login');
+    showAuthError('카카오 로그인 처리 중...');
+    (async()=>{
+      if(FB.url)await FB.pull();
+      await exchangeKakaoCode(codeParam);
+    })();
+    return;
+  }
+
+  // ② URL 파라미터 파싱 (초대 링크 / fburl)
+  if(fbParam&&!DB.g('fb_url','')){DB.s('fb_url'
