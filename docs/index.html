@@ -318,22 +318,6 @@ nav{height:var(--nh);background:var(--sf);border-top:1px solid var(--bd);display
 </div>
 
 <!-- 기존 계정 연동 모달 -->
-<div class="overlay hidden" id="migrate-modal" style="z-index:1100;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)">
-  <div class="modal" style="max-width:360px;width:calc(100% - 32px);border-radius:20px;overflow:hidden">
-    <div class="modal-head" style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd)">
-      <span style="font-weight:700;font-size:16px">🔗 기존 계정 연동</span>
-      <button class="close-btn" onclick="closeMigrateModal()">✕</button>
-    </div>
-    <div style="padding:20px;display:flex;flex-direction:column;gap:12px">
-      <p style="font-size:13px;color:var(--tx2);text-align:center;line-height:1.5">카카오 계정을 기존 아이디에 연동합니다.<br>기존 아이디와 비밀번호를 입력해주세요.</p>
-      <input type="text" id="mig-id" placeholder="기존 아이디" autocapitalize="off" autocorrect="off" spellcheck="false">
-      <input type="password" id="mig-pw" placeholder="기존 비밀번호" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')doMigrate()">
-      <div id="mig-error" style="color:#e53935;font-size:12px;font-weight:600;text-align:center;min-height:16px"></div>
-      <button onclick="doMigrate()" style="background:var(--pr);color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:700;width:100%">연동하기</button>
-    </div>
-  </div>
-</div>
-
 <!-- 프로필 선택 모달 -->
 <div class="overlay hidden" id="profile-select-modal" style="z-index:1100;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)">
   <div class="modal" style="max-width:360px;width:calc(100% - 32px);border-radius:20px;overflow:hidden">
@@ -921,41 +905,10 @@ async function handleKakaoAuth(kakaoId,kakaoNickname,kakaoProfileImage){
     else{DB.d('sid');sessionStorage.setItem('tj_sid',ME.id);}
     showProfileSelect();return;
   }
-  // 3. 기존 계정 연동 필요
-  showMigrateModal();
+  // 3. 연동된 계정 없음 → 초대코드로 가입 안내
+  showAuthError('초대 코드로 회원가입 후 카카오 로그인해주세요.');switchTab("signup");
 }
 
-function showMigrateModal(){
-  const m=document.getElementById('migrate-modal');
-  if(m)m.classList.remove('hidden');
-}
-function closeMigrateModal(){
-  const m=document.getElementById('migrate-modal');
-  if(m)m.classList.add('hidden');
-  const mi=document.getElementById('mig-id');const mp=document.getElementById('mig-pw');
-  if(mi)mi.value='';if(mp)mp.value='';
-  const me=document.getElementById('mig-error');if(me)me.textContent='';
-}
-async function doMigrate(){
-  const idEl=document.getElementById('mig-id');
-  const pwEl=document.getElementById('mig-pw');
-  const errEl=document.getElementById('mig-error');
-  const id=(idEl?idEl.value.trim():'');
-  const pw=(pwEl?pwEl.value:'');
-  if(!id||!pw){if(errEl)errEl.textContent='아이디와 비밀번호를 입력해주세요';return;}
-  if(FB.url)await FB.pull();
-  const users=getUsers();
-  const found=users.find(u=>u.username===id&&u.password===hash(pw));
-  if(!found){if(errEl)errEl.textContent='아이디 또는 비밀번호가 틀렸습니다';return;}
-  const {kakaoId,kakaoNickname,kakaoProfileImage}=_pendingKakao||{};
-  found.kakaoId=kakaoId;
-  found.kakaoNickname=kakaoNickname;
-  found.kakaoProfileImage=kakaoProfileImage;
-  if(!found.profileChoice)found.profileChoice='emoji';
-  saveUsers(users);ME=found;
-  closeMigrateModal();
-  showProfileSelect();
-}
 
 function showProfileSelect(){
   document.getElementById('auth').classList.add('hidden');
@@ -1072,8 +1025,8 @@ const MAP = {
   _useKakao:false,_kakaoMap:null,_kakaoMarkers:{},
 
   init(){
-    const k=DB.g('kakao_js_key','');
-    if(k)this._initKakao(k); else this._initOSM();
+    const k=DB.g('kakao_js_key','')||'66fe8f5aca605768aa3bdee158b7c20d';
+    this._initKakao(k);
   },
 
   _initOSM(){
@@ -3073,7 +3026,7 @@ async function startApp(){
 
 async function exchangeKakaoCode(code){
   const restKey=DB.g('kakao_rest_key','')||'2555299e1c4bc22a9ec366758ed74265';
-  const jsKey=DB.g('kakao_js_key','');
+  const jsKey=DB.g('kakao_js_key','')||'66fe8f5aca605768aa3bdee158b7c20d';
   if(!restKey){showAuthError('카카오 REST API 키가 없습니다. 어드민에게 문의하세요.');return;}
   if(!window.Kakao){showAuthError('카카오 SDK가 로드되지 않았습니다.');return;}
   try{if(!Kakao.isInitialized()&&jsKey)Kakao.init(jsKey);}catch(e){}
