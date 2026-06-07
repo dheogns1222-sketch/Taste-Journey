@@ -2858,275 +2858,350 @@ async function _loadShareFonts(){
   }catch(e){window._shareFontsLoaded=true;}/* 폰트 로드 실패시 폴백으로 진행 */
 }
 
-function _buildShareCanvas(p){
+/* ═══ 공유카드 포맷 정의 ═══ */
+const SHARE_FMTS=[
+  {id:'card',  label:'카드',   icon:'🃏', W:1800,H:1000, desc:'9:5'},
+  {id:'square',label:'정사각', icon:'⬛', W:1080,H:1080, desc:'1:1'},
+  {id:'wide',  label:'와이드', icon:'📺', W:1920,H:1080, desc:'16:9'},
+  {id:'story', label:'스토리', icon:'📱', W:1080,H:1920, desc:'9:16'},
+];
+let _currentSharePlace=null,_currentShareFmt='card';
+
+/* ─── 공유카드 공통 드로잉 헬퍼 ─── */
+function _sc_bg(ctx,W,H){
+  const g=ctx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0,'#0D0A06');g.addColorStop(0.5,'#1A1208');g.addColorStop(1,'#0F0C07');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // 노이즈
+  for(let i=0;i<2000;i++){
+    ctx.fillStyle=`rgba(201,168,108,${Math.random()*0.018})`;
+    ctx.fillRect(Math.random()*W,Math.random()*H,1.5,1.5);
+  }
+}
+function _sc_goldLine(ctx,H,thick=6){
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'rgba(201,168,108,0)');g.addColorStop(0.25,'rgba(201,168,108,0.9)');
+  g.addColorStop(0.75,'rgba(232,200,126,1)');g.addColorStop(1,'rgba(201,168,108,0)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,thick,H);
+}
+function _sc_drawPhoto(ctx,img,x,y,w,h){
+  ctx.save();
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+  const ir=img.naturalWidth/img.naturalHeight,cr=w/h;
+  let sx,sy,sw,sh;
+  if(ir>cr){sh=img.naturalHeight;sw=sh*cr;sx=(img.naturalWidth-sw)/2;sy=0;}
+  else{sw=img.naturalWidth;sh=sw/cr;sx=0;sy=(img.naturalHeight-sh)/2;}
+  ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
+  ctx.restore();
+}
+function _sc_photoOverlayH(ctx,phX,phY,phW,phH,fadeW=120){
+  // 비네팅
+  const vg=ctx.createRadialGradient(phX+phW*0.5,phH*0.5,phH*0.08,phX+phW*0.5,phH*0.5,phH*0.8);
+  vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,0.5)');
+  ctx.fillStyle=vg;ctx.fillRect(phX,phY,phW,phH);
+  // 좌측 페이드
+  const lg=ctx.createLinearGradient(phX,0,phX+fadeW,0);
+  lg.addColorStop(0,'rgba(13,10,6,1)');lg.addColorStop(1,'rgba(13,10,6,0)');
+  ctx.fillStyle=lg;ctx.fillRect(phX,phY,fadeW,phH);
+}
+function _sc_photoOverlayV(ctx,x,y,w,h,fadeH=400){
+  // 하단 페이드 (스토리/정사각형용)
+  const g=ctx.createLinearGradient(0,y+h-fadeH,0,y+h);
+  g.addColorStop(0,'rgba(13,10,6,0)');g.addColorStop(1,'rgba(13,10,6,0.97)');
+  ctx.fillStyle=g;ctx.fillRect(x,y+h-fadeH,w,fadeH);
+  // 비네팅
+  const vg=ctx.createRadialGradient(x+w/2,y+h/2,h*0.08,x+w/2,y+h/2,h*0.7);
+  vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,0.4)');
+  ctx.fillStyle=vg;ctx.fillRect(x,y,w,h);
+}
+function _sc_stars(ctx,rating,x,y,size,gap){
+  const full=Math.floor(rating),half=(rating%1)>=0.5;
+  ctx.font=`${size}px serif`;ctx.textBaseline='middle';
+  for(let i=0;i<5;i++){
+    ctx.fillStyle=i<full?'#E8C87E':(i===full&&half?'#E8C87E':'rgba(201,168,108,0.22)');
+    ctx.fillText(i<full?'★':(i===full&&half?'★':'☆'),x+i*(size+gap),y);
+  }
+}
+function _sc_badge(ctx,label,x,y,isWish,fs=20){
+  const pad=fs*0.55;
+  ctx.font=`700 ${fs}px "DM Sans",sans-serif`;
+  const tw=ctx.measureText(label).width;
+  const bw=tw+pad*2,bh=fs*1.7,r=bh/2;
+  ctx.save();
+  ctx.beginPath();ctx.roundRect(x,y,bw,bh,r);
+  ctx.fillStyle=isWish?'rgba(33,150,243,0.18)':'rgba(46,125,50,0.18)';
+  ctx.fill();
+  ctx.strokeStyle=isWish?'rgba(100,181,246,0.55)':'rgba(102,187,106,0.55)';
+  ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle=isWish?'#64B5F6':'#66BB6A';
+  ctx.textBaseline='middle';ctx.textAlign='left';
+  ctx.fillText(label,x+pad,y+bh/2);
+  ctx.restore();
+  return bw;
+}
+function _sc_brand(ctx,x,y,fs=20){
+  ctx.font=`600 ${fs}px "DM Sans",sans-serif`;
+  ctx.fillStyle='rgba(232,200,126,0.5)';
+  ctx.textBaseline='top';ctx.textAlign='left';
+  ctx.letterSpacing='3px';
+  ctx.fillText('TASTE  JOURNEY',x,y);
+  ctx.letterSpacing='0px';
+}
+function _sc_wrapText(ctx,text,x,y,maxW,lineH){
+  const words=text.split('');let line='',lines=[];
+  // character-level wrap for CJK
+  for(let c of text){
+    const test=line+c;
+    if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=c;}
+    else line=test;
+  }
+  if(line)lines.push(line);
+  lines.slice(0,3).forEach((l,i)=>ctx.fillText(l,x,y+i*lineH));
+  return Math.min(lines.length,3)*lineH;
+}
+
+/* ─── 카드형 레이아웃 (1800×1000) ─── */
+function _sc_layoutCard(ctx,p,cat,type,W,H,hasPhoto){
+  const isWish=type==='wish';
+  const phW=640,phX=W-phW,phY=0,phH=H;
+  const tx=64,txMaxW=phX-tx-48;
+  let y=88;
+  _sc_brand(ctx,tx,y,22);y+=40;
+  ctx.strokeStyle='rgba(201,168,108,0.28)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(tx,y);ctx.lineTo(tx+txMaxW,y);ctx.stroke();y+=32;
+  // badge
+  _sc_badge(ctx,isWish?'🔖 가고싶다':'✅ 방문완료',tx,y,isWish,22);y+=62;
+  // name
+  ctx.font=`700 68px "Playfair Display","Georgia",serif`;
+  ctx.fillStyle='#F0E8D8';ctx.textBaseline='top';ctx.textAlign='left';
+  const nameH=_sc_wrapText(ctx,p.name,tx,y,txMaxW,82);y+=nameH+22;
+  // category
+  ctx.font=`600 22px "DM Sans",sans-serif`;
+  ctx.fillStyle='rgba(232,200,126,0.65)';ctx.letterSpacing='1.5px';
+  ctx.fillText((cat?cat.e+' ':'')+p.category.toUpperCase(),tx,y);
+  ctx.letterSpacing='0px';y+=48;
+  // address
+  if(p.address){ctx.font=`400 19px "DM Sans",sans-serif`;ctx.fillStyle='rgba(240,232,216,0.45)';ctx.fillText('📍 '+p.address.substring(0,32)+(p.address.length>32?'…':''),tx,y);y+=40;}
+  // stars
+  if(p.rating){_sc_stars(ctx,p.rating,tx,y+18,28,4);ctx.font=`600 20px "DM Sans",sans-serif`;ctx.fillStyle='rgba(232,200,126,0.7)';ctx.textBaseline='middle';ctx.fillText(p.rating+'/5',tx+5*32,y+18);y+=64;}
+  // memo
+  if(p.memo){
+    ctx.fillStyle='rgba(201,168,108,0.7)';ctx.fillRect(tx,y,3,56);
+    ctx.font=`400 italic 22px "Playfair Display","Georgia",serif`;
+    ctx.fillStyle='rgba(240,232,216,0.6)';ctx.textBaseline='top';
+    _sc_wrapText(ctx,'"'+p.memo+'"',tx+18,y,txMaxW-18,30);y+=72;
+  }
+  // footer
+  const infoY=H-52;
+  ctx.strokeStyle='rgba(201,168,108,0.22)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(tx,infoY-14);ctx.lineTo(tx+txMaxW,infoY-14);ctx.stroke();
+  ctx.font=`400 20px "DM Sans",sans-serif`;ctx.textBaseline='middle';
+  if(p.visitDate){ctx.fillStyle='rgba(240,232,216,0.45)';ctx.textAlign='left';ctx.fillText('📅 '+p.visitDate,tx,infoY);}
+  if(p.price){ctx.fillStyle='rgba(232,200,126,0.75)';ctx.textAlign='left';ctx.fillText('💰 '+p.price.toLocaleString()+'원',tx+200,infoY);}
+  ctx.font=`400 18px "DM Sans",sans-serif`;ctx.fillStyle='rgba(201,168,108,0.4)';ctx.textAlign='right';ctx.letterSpacing='1px';
+  ctx.fillText('커플 맛집 투어 기록',phX-36,infoY);ctx.letterSpacing='0px';
+  // photo placeholder
+  if(!hasPhoto){
+    ctx.fillStyle='#130F08';ctx.fillRect(phX,0,phW,H);
+    const phg=ctx.createLinearGradient(phX,0,phX+phW,0);
+    phg.addColorStop(0,'rgba(201,168,108,0.07)');phg.addColorStop(1,'rgba(201,168,108,0.02)');
+    ctx.fillStyle=phg;ctx.fillRect(phX,0,phW,H);
+    ctx.font=`160px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.globalAlpha=0.2;
+    ctx.fillText(cat?cat.e:'🍴',phX+phW/2,H/2);ctx.globalAlpha=1;
+    const dg=ctx.createLinearGradient(phX-60,0,phX+20,0);
+    dg.addColorStop(0,'rgba(13,10,6,1)');dg.addColorStop(1,'rgba(13,10,6,0)');
+    ctx.fillStyle=dg;ctx.fillRect(phX-60,0,80,H);
+  }
+  return {phX,phY,phW,phH};
+}
+
+/* ─── 정사각형 레이아웃 (1080×1080) ─── */
+function _sc_layoutSquare(ctx,p,cat,type,W,H,hasPhoto){
+  const isWish=type==='wish';
+  const splitY=Math.floor(H*0.48);
+  // 상단 사진 영역 placeholder
+  if(!hasPhoto){
+    ctx.fillStyle='#160E06';ctx.fillRect(0,0,W,splitY);
+    ctx.font=`180px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.globalAlpha=0.2;
+    ctx.fillText(cat?cat.e:'🍴',W/2,splitY/2);ctx.globalAlpha=1;
+  }
+  // 하단 어두운 영역
+  ctx.fillStyle='#0D0A06';ctx.fillRect(0,splitY,W,H-splitY);
+  // 구분선
+  ctx.strokeStyle='rgba(201,168,108,0.3)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(48,splitY+1);ctx.lineTo(W-48,splitY+1);ctx.stroke();
+  // brand (사진 위)
+  _sc_brand(ctx,40,32,20);
+  // badge (사진 위 우측)
+  const bw=_sc_badge(ctx,isWish?'🔖 가고싶다':'✅ 방문완료',W-250,32,isWish,20);
+  // 텍스트 영역
+  let y=splitY+42;
+  ctx.font=`700 56px "Playfair Display","Georgia",serif`;
+  ctx.fillStyle='#F0E8D8';ctx.textBaseline='top';ctx.textAlign='left';
+  _sc_wrapText(ctx,p.name,48,y,W-96,68);y+=88;
+  ctx.font=`600 20px "DM Sans",sans-serif`;
+  ctx.fillStyle='rgba(232,200,126,0.65)';ctx.letterSpacing='1.2px';
+  ctx.fillText((cat?cat.e+' ':'')+p.category.toUpperCase(),48,y);ctx.letterSpacing='0px';y+=40;
+  if(p.rating){_sc_stars(ctx,p.rating,48,y+14,26,3);y+=52;}
+  if(p.address){ctx.font=`400 17px "DM Sans",sans-serif`;ctx.fillStyle='rgba(240,232,216,0.38)';ctx.fillText('📍 '+p.address.substring(0,34)+(p.address.length>34?'…':''),48,y);y+=34;}
+  if(p.memo){ctx.font=`400 italic 20px "Playfair Display",serif`;ctx.fillStyle='rgba(240,232,216,0.55)';_sc_wrapText(ctx,'"'+p.memo+'"',48,y,W-96,26);}
+  // footer
+  const fy=H-44;
+  ctx.strokeStyle='rgba(201,168,108,0.18)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(48,fy-12);ctx.lineTo(W-48,fy-12);ctx.stroke();
+  ctx.font=`400 18px "DM Sans",sans-serif`;ctx.textBaseline='middle';
+  if(p.visitDate){ctx.fillStyle='rgba(240,232,216,0.4)';ctx.textAlign='left';ctx.fillText('📅 '+p.visitDate,48,fy);}
+  ctx.fillStyle='rgba(201,168,108,0.38)';ctx.textAlign='right';ctx.letterSpacing='1px';
+  ctx.fillText('Taste Journey',W-48,fy);ctx.letterSpacing='0px';
+  _sc_goldLine(ctx,H);
+  return {phX:0,phY:0,phW:W,phH:splitY};
+}
+
+/* ─── 와이드 레이아웃 (1920×1080) ─── */
+function _sc_layoutWide(ctx,p,cat,type,W,H,hasPhoto){
+  const isWish=type==='wish';
+  const phW=800,phX=W-phW,phY=0,phH=H;
+  const tx=72,txMaxW=phX-tx-56;
+  let y=96;
+  _sc_brand(ctx,tx,y,22);y+=44;
+  ctx.strokeStyle='rgba(201,168,108,0.25)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(tx,y);ctx.lineTo(tx+txMaxW,y);ctx.stroke();y+=36;
+  _sc_badge(ctx,isWish?'🔖 가고싶다':'✅ 방문완료',tx,y,isWish,24);y+=68;
+  ctx.font=`700 72px "Playfair Display","Georgia",serif`;
+  ctx.fillStyle='#F0E8D8';ctx.textBaseline='top';ctx.textAlign='left';
+  const nameH=_sc_wrapText(ctx,p.name,tx,y,txMaxW,88);y+=nameH+28;
+  ctx.font=`600 24px "DM Sans",sans-serif`;
+  ctx.fillStyle='rgba(232,200,126,0.65)';ctx.letterSpacing='1.5px';
+  ctx.fillText((cat?cat.e+' ':'')+p.category.toUpperCase(),tx,y);ctx.letterSpacing='0px';y+=52;
+  if(p.address){ctx.font=`400 20px "DM Sans",sans-serif`;ctx.fillStyle='rgba(240,232,216,0.42)';ctx.fillText('📍 '+p.address.substring(0,36)+(p.address.length>36?'…':''),tx,y);y+=44;}
+  if(p.rating){_sc_stars(ctx,p.rating,tx,y+20,30,5);ctx.font=`600 22px "DM Sans",sans-serif`;ctx.fillStyle='rgba(232,200,126,0.7)';ctx.textBaseline='middle';ctx.fillText(p.rating+'/5',tx+5*35,y+20);y+=68;}
+  if(p.memo){
+    ctx.fillStyle='rgba(201,168,108,0.7)';ctx.fillRect(tx,y,3,60);
+    ctx.font=`400 italic 24px "Playfair Display","Georgia",serif`;
+    ctx.fillStyle='rgba(240,232,216,0.58)';ctx.textBaseline='top';
+    _sc_wrapText(ctx,'"'+p.memo+'"',tx+20,y,txMaxW-20,32);y+=76;
+  }
+  const infoY=H-56;
+  ctx.strokeStyle='rgba(201,168,108,0.2)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(tx,infoY-16);ctx.lineTo(tx+txMaxW,infoY-16);ctx.stroke();
+  ctx.font=`400 20px "DM Sans",sans-serif`;ctx.textBaseline='middle';
+  if(p.visitDate){ctx.fillStyle='rgba(240,232,216,0.42)';ctx.textAlign='left';ctx.fillText('📅 '+p.visitDate,tx,infoY);}
+  if(p.price){ctx.fillStyle='rgba(232,200,126,0.72)';ctx.textAlign='left';ctx.fillText('💰 '+p.price.toLocaleString()+'원',tx+220,infoY);}
+  ctx.font=`400 18px "DM Sans",sans-serif`;ctx.fillStyle='rgba(201,168,108,0.38)';ctx.textAlign='right';ctx.letterSpacing='1px';
+  ctx.fillText('커플 맛집 투어 기록',phX-40,infoY);ctx.letterSpacing='0px';
+  if(!hasPhoto){
+    ctx.fillStyle='#130F08';ctx.fillRect(phX,0,phW,H);
+    ctx.font=`200px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.globalAlpha=0.18;
+    ctx.fillText(cat?cat.e:'🍴',phX+phW/2,H/2);ctx.globalAlpha=1;
+    const dg=ctx.createLinearGradient(phX-80,0,phX+24,0);
+    dg.addColorStop(0,'rgba(13,10,6,1)');dg.addColorStop(1,'rgba(13,10,6,0)');
+    ctx.fillStyle=dg;ctx.fillRect(phX-80,0,104,H);
+  }
+  return {phX,phY,phW,phH};
+}
+
+/* ─── 스토리 레이아웃 (1080×1920) ─── */
+function _sc_layoutStory(ctx,p,cat,type,W,H,hasPhoto){
+  const isWish=type==='wish';
+  const splitY=Math.floor(H*0.55);
+  const textY=splitY;
+  // 사진 placeholder
+  if(!hasPhoto){
+    ctx.fillStyle='#160E06';ctx.fillRect(0,0,W,splitY+60);
+    ctx.font=`260px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.globalAlpha=0.18;
+    ctx.fillText(cat?cat.e:'🍴',W/2,splitY/2);ctx.globalAlpha=1;
+  }
+  // 텍스트 영역 배경
+  ctx.fillStyle='#0D0A06';ctx.fillRect(0,splitY,W,H-splitY);
+  // 사진-텍스트 경계 그라디언트
+  const topFade=ctx.createLinearGradient(0,splitY-80,0,splitY+40);
+  topFade.addColorStop(0,'rgba(13,10,6,0)');topFade.addColorStop(1,'rgba(13,10,6,1)');
+  ctx.fillStyle=topFade;ctx.fillRect(0,splitY-80,W,120);
+  // brand (사진 위)
+  _sc_brand(ctx,44,52,22);
+  // badge
+  _sc_badge(ctx,isWish?'🔖 가고싶다':'✅ 방문완료',44,100,isWish,22);
+  // 구분선
+  ctx.strokeStyle='rgba(201,168,108,0.28)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(44,textY+28);ctx.lineTo(W-44,textY+28);ctx.stroke();
+  // 텍스트
+  let y=textY+52;
+  ctx.font=`700 64px "Playfair Display","Georgia",serif`;
+  ctx.fillStyle='#F0E8D8';ctx.textBaseline='top';ctx.textAlign='left';
+  const nameH=_sc_wrapText(ctx,p.name,44,y,W-88,78);y+=nameH+30;
+  ctx.font=`600 22px "DM Sans",sans-serif`;
+  ctx.fillStyle='rgba(232,200,126,0.65)';ctx.letterSpacing='1.2px';
+  ctx.fillText((cat?cat.e+' ':'')+p.category.toUpperCase(),44,y);ctx.letterSpacing='0px';y+=50;
+  if(p.rating){_sc_stars(ctx,p.rating,44,y+16,30,4);y+=66;}
+  if(p.address){ctx.font=`400 19px "DM Sans",sans-serif`;ctx.fillStyle='rgba(240,232,216,0.4)';ctx.fillText('📍 '+p.address.substring(0,28)+(p.address.length>28?'…':''),44,y);y+=42;}
+  if(p.memo){
+    ctx.fillStyle='rgba(201,168,108,0.65)';ctx.fillRect(44,y,3,60);
+    ctx.font=`400 italic 23px "Playfair Display","Georgia",serif`;
+    ctx.fillStyle='rgba(240,232,216,0.55)';ctx.textBaseline='top';
+    _sc_wrapText(ctx,'"'+p.memo+'"',64,y,W-108,30);y+=80;
+  }
+  // footer
+  const fy=H-52;
+  ctx.strokeStyle='rgba(201,168,108,0.18)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(44,fy-14);ctx.lineTo(W-44,fy-14);ctx.stroke();
+  ctx.font=`400 19px "DM Sans",sans-serif`;ctx.textBaseline='middle';
+  if(p.visitDate){ctx.fillStyle='rgba(240,232,216,0.38)';ctx.textAlign='left';ctx.fillText('📅 '+p.visitDate,44,fy);}
+  if(p.price){ctx.fillStyle='rgba(232,200,126,0.7)';ctx.textAlign='right';ctx.fillText('💰 '+p.price.toLocaleString()+'원',W-44,fy);}
+  ctx.fillStyle='rgba(201,168,108,0.35)';ctx.textAlign='center';ctx.font=`400 16px "DM Sans",sans-serif`;ctx.letterSpacing='1px';
+  ctx.fillText('커플 맛집 투어 기록 · Taste Journey',W/2,fy);ctx.letterSpacing='0px';
+  _sc_goldLine(ctx,H);
+  return {phX:0,phY:0,phW:W,phH:splitY+60};
+}
+
+/* ─── 메인 빌더 ─── */
+function _buildShareCanvas(p, fmtId='card'){
   const cat=C.CATS.find(c=>c.k===p.category);
   const type=p.type||(p.status==='wishlist'?'wish':'visited');
-  const W=900,H=500;
+  const fmt=SHARE_FMTS.find(f=>f.id===fmtId)||SHARE_FMTS[0];
+  const W=fmt.W,H=fmt.H;
   const cv=document.createElement('canvas');cv.width=W;cv.height=H;
   const ctx=cv.getContext('2d');
-  const isWish=type==='wish';
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  _sc_bg(ctx,W,H);
+  const hasPhoto=!!(p.photos&&(p.photos[p.mainPhotoIdx||0]||p.photos[0]))||(p.photoUrls&&p.photoUrls[0]);
+  let phInfo;
+  if(fmtId==='square') phInfo=_sc_layoutSquare(ctx,p,cat,type,W,H,hasPhoto);
+  else if(fmtId==='wide') phInfo=_sc_layoutWide(ctx,p,cat,type,W,H,hasPhoto);
+  else if(fmtId==='story') phInfo=_sc_layoutStory(ctx,p,cat,type,W,H,hasPhoto);
+  else phInfo=_sc_layoutCard(ctx,p,cat,type,W,H,hasPhoto);
+  if(fmtId==='card'||fmtId==='wide') _sc_goldLine(ctx,H);
+  return {cv,ctx,W,H,cat,type,phX:phInfo.phX,phY:phInfo.phY,phW:phInfo.phW,phH:phInfo.phH,fmtId};
 
-  // ── 배경: 다크 시네마틱 그라디언트 ──
-  const bgGrad=ctx.createLinearGradient(0,0,W,H);
-  bgGrad.addColorStop(0,'#0D0A06');
-  bgGrad.addColorStop(0.5,'#1A1208');
-  bgGrad.addColorStop(1,'#0F0C07');
-  ctx.fillStyle=bgGrad;ctx.fillRect(0,0,W,H);
-
-  // ── 미묘한 노이즈 텍스처 레이어 ──
-  for(let i=0;i<1200;i++){
-    const x=Math.random()*W,y=Math.random()*H;
-    ctx.fillStyle=`rgba(201,168,108,${Math.random()*0.025})`;
-    ctx.fillRect(x,y,1,1);
-  }
-
-  // ── 사진 영역 (우측 320px) ──
-  const phW=320,phX=W-phW,phY=0,phH=H;
-
-  // 사진 없을 때 플레이스홀더
-  ctx.fillStyle='#130F08';ctx.fillRect(phX,phY,phW,phH);
-  const phGrad=ctx.createLinearGradient(phX,0,phX+phW,0);
-  phGrad.addColorStop(0,'rgba(201,168,108,0.08)');
-  phGrad.addColorStop(1,'rgba(201,168,108,0.03)');
-  ctx.fillStyle=phGrad;ctx.fillRect(phX,phY,phW,phH);
-  ctx.font='80px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.globalAlpha=0.25;
-  ctx.fillText(cat?cat.e:'🍴',phX+phW/2,phH/2);
-  ctx.globalAlpha=1;
-
-  // 사진-텍스트 경계 그라디언트 (오른쪽 → 왼쪽)
-  const divGrad=ctx.createLinearGradient(phX-60,0,phX+20,0);
-  divGrad.addColorStop(0,'rgba(13,10,6,1)');
-  divGrad.addColorStop(1,'rgba(13,10,6,0)');
-  ctx.fillStyle=divGrad;ctx.fillRect(phX-60,0,80,H);
-
-  // ── 좌측 골드 세로선 ──
-  const goldLineGrad=ctx.createLinearGradient(0,0,0,H);
-  goldLineGrad.addColorStop(0,'rgba(201,168,108,0)');
-  goldLineGrad.addColorStop(0.3,'rgba(201,168,108,0.9)');
-  goldLineGrad.addColorStop(0.7,'rgba(232,200,126,1)');
-  goldLineGrad.addColorStop(1,'rgba(201,168,108,0)');
-  ctx.fillStyle=goldLineGrad;ctx.fillRect(0,0,3,H);
-
-  // ── 텍스트 영역 레이아웃 ──
-  const tx=32,txMaxW=phX-tx-24;
-  let y=44;
-
-  // ── 앱 브랜드 라인 ──
-  const pf=window._shareFontsLoaded?'Playfair Display':'Georgia';
-  ctx.fillStyle='rgba(232,200,126,0.55)';
-  ctx.font=`600 11px "DM Sans",sans-serif`;
-  ctx.textAlign='left';ctx.textBaseline='top';
-  ctx.letterSpacing='3px';
-  ctx.fillText('TASTE  JOURNEY',tx,y);
-  ctx.letterSpacing='0px';
-  y+=20;
-
-  // 얇은 골드 구분선
-  ctx.strokeStyle='rgba(201,168,108,0.3)';ctx.lineWidth=0.5;
-  ctx.beginPath();ctx.moveTo(tx,y);ctx.lineTo(tx+txMaxW,y);ctx.stroke();
-  y+=16;
-
-  // ── 방문상태 배지 ──
-  const bdgLabel=isWish?'방문 예정':'방문 완료';
-  const bdgColor=isWish?'rgba(100,149,237,0.18)':'rgba(201,168,108,0.15)';
-  const bdgBorder=isWish?'rgba(100,149,237,0.6)':'rgba(201,168,108,0.6)';
-  ctx.font=`500 10px "DM Sans",sans-serif`;
-  const bdgTW=ctx.measureText(bdgLabel).width;
-  const bdgW=bdgTW+28,bdgH=20;
-  ctx.fillStyle=bdgColor;
-  ctx.beginPath();
-  if(ctx.roundRect)ctx.roundRect(tx,y,bdgW,bdgH,10);else ctx.rect(tx,y,bdgW,bdgH);
-  ctx.fill();
-  ctx.strokeStyle=bdgBorder;ctx.lineWidth=0.8;
-  ctx.beginPath();
-  if(ctx.roundRect)ctx.roundRect(tx,y,bdgW,bdgH,10);else ctx.rect(tx,y,bdgW,bdgH);
-  ctx.stroke();
-  ctx.fillStyle=isWish?'rgba(180,200,255,0.9)':'rgba(232,200,126,0.9)';
-  ctx.textBaseline='middle';ctx.fillText(bdgLabel,tx+14,y+bdgH/2);
-  y+=bdgH+18;
-
-  // ── 카테고리 이모지 + 가게 이름 (Playfair Display) ──
-  const catE=cat?cat.e:'🍴';
-  ctx.font=`28px sans-serif`;ctx.textBaseline='top';
-  ctx.fillText(catE,tx,y-2);
-
-  ctx.fillStyle='#F0E8D8';
-  ctx.font=`bold 34px "${pf}",Georgia,serif`;
-  const nameX=tx+38;
-  const nameStr=p.name.length>14?p.name.slice(0,14)+'…':p.name;
-  ctx.fillText(nameStr,nameX,y,txMaxW-(nameX-tx));
-  y+=42;
-
-  // ── 카테고리 텍스트 ──
-  ctx.fillStyle='rgba(201,168,108,0.7)';
-  ctx.font=`400 12px "DM Sans",sans-serif`;
-  ctx.letterSpacing='1.5px';
-  ctx.fillText((p.category||'').toUpperCase(),tx+42,y);
-  ctx.letterSpacing='0px';
-  y+=22;
-
-  // ── 주소 ──
-  if(p.address){
-    const addr=(p.address||'').trim().split(/\s+/).slice(0,4).join(' ');
-    ctx.fillStyle='rgba(200,184,152,0.65)';
-    ctx.font=`400 12px "DM Sans",sans-serif`;
-    ctx.fillText('📍  '+addr,tx,y,txMaxW);
-    y+=20;
-  }
-  y+=6;
-
-  // ── 구분선 ──
-  ctx.strokeStyle='rgba(201,168,108,0.15)';ctx.lineWidth=0.5;
-  ctx.beginPath();ctx.moveTo(tx,y);ctx.lineTo(tx+txMaxW*0.6,y);ctx.stroke();
-  y+=14;
-
-  // ── 별점 (골드 스타) ──
-  if(p.rating){
-    const fS=Math.floor(p.rating),hS=p.rating%1>=0.5?1:0,eS=Math.max(0,5-fS-hS);
-    const sz=20;let sX=tx;
-    ctx.font=sz+'px sans-serif';ctx.textBaseline='top';
-    for(let i=0;i<fS;i++){ctx.fillStyle='#E8C87E';ctx.fillText('★',sX,y);sX+=sz*0.88;}
-    if(hS){
-      ctx.save();ctx.beginPath();ctx.rect(sX,y-2,sz*0.5,sz+4);ctx.clip();
-      ctx.fillStyle='#E8C87E';ctx.fillText('★',sX,y);ctx.restore();
-      ctx.save();ctx.beginPath();ctx.rect(sX+sz*0.5,y-2,sz*0.5,sz+4);ctx.clip();
-      ctx.fillStyle='rgba(201,168,108,0.25)';ctx.fillText('★',sX,y);ctx.restore();
-      sX+=sz*0.88;
-    }
-    ctx.fillStyle='rgba(201,168,108,0.25)';
-    for(let i=0;i<eS;i++){ctx.fillText('★',sX,y);sX+=sz*0.88;}
-    ctx.fillStyle='rgba(201,168,108,0.8)';
-    ctx.font=`600 12px "DM Sans",sans-serif`;
-    ctx.textBaseline='middle';ctx.fillText(p.rating+' / 5',sX+8,y+sz/2);
-    y+=sz+10;
-  }
-
-  // ── 대표 메뉴 ──
-  if(p.menu){
-    ctx.fillStyle='rgba(200,184,152,0.7)';
-    ctx.font=`400 12px "DM Sans",sans-serif`;
-    ctx.textBaseline='top';
-    const menuStr=p.menu.length>28?p.menu.slice(0,28)+'…':p.menu;
-    ctx.fillText('🍴  '+menuStr,tx,y,txMaxW);
-    y+=18;
-  }
-
-  // ── 맵기 ──
-  if(p.spiciness){
-    const esz=13;let sX=tx;
-    ctx.font=esz+'px sans-serif';ctx.textBaseline='top';
-    for(let i=1;i<=10;i++){
-      ctx.globalAlpha=i<=p.spiciness?0.9:0.12;
-      ctx.fillText('🌶',sX,y+1);sX+=esz+3;
-    }
-    ctx.globalAlpha=1;
-    ctx.fillStyle='rgba(200,184,152,0.5)';
-    ctx.font=`400 10px "DM Sans",sans-serif`;
-    ctx.textBaseline='middle';ctx.fillText(p.spiciness+'/10',sX+4,y+esz/2);
-    y+=20;
-  }
-
-  // ── 메모 (이탤릭 인용) ──
-  if(p.memo){
-    y+=6;
-    ctx.fillStyle='rgba(201,168,108,0.12)';
-    const mH=34,mW=txMaxW;
-    ctx.beginPath();
-    if(ctx.roundRect)ctx.roundRect(tx,y,mW,mH,6);else ctx.rect(tx,y,mW,mH);
-    ctx.fill();
-    ctx.strokeStyle='rgba(201,168,108,0.2)';ctx.lineWidth=0.5;
-    ctx.beginPath();
-    ctx.moveTo(tx,y+4);ctx.lineTo(tx,y+mH-4);ctx.stroke();
-    ctx.fillStyle='rgba(200,184,152,0.75)';
-    ctx.font=`italic 400 11px "${pf}",Georgia,serif`;
-    ctx.textBaseline='middle';
-    const m=p.memo.length>44?p.memo.slice(0,44)+'…':p.memo;
-    ctx.fillText('"'+m+'"',tx+12,y+mH/2,mW-24);
-    y+=mH;
-  }
-
-  // ── 방문예정 우선순위 ──
-  if(isWish&&p.priority){
-    y+=6;
-    const pLabel=['','1순위','2순위','3순위','4순위','5순위'][p.priority]||'';
-    ctx.fillStyle='rgba(100,149,237,0.7)';
-    ctx.font=`600 11px "DM Sans",sans-serif`;
-    ctx.textBaseline='top';ctx.fillText('⭐ '+pLabel,tx,y);
-  }
-
-  // ── 하단 정보 바 ──
-  const fY=H-48;
-  // 구분선
-  ctx.strokeStyle='rgba(201,168,108,0.2)';ctx.lineWidth=0.5;
-  ctx.beginPath();ctx.moveTo(tx,fY);ctx.lineTo(phX-24,fY);ctx.stroke();
-
-  ctx.textBaseline='middle';
-  const infoY=fY+24;
-  ctx.font=`500 11px "DM Sans",sans-serif`;
-  let infoX=tx;
-
-  if(p.price){
-    ctx.fillStyle='rgba(232,200,126,0.8)';
-    ctx.fillText('₩ '+p.price.toLocaleString(),infoX,infoY);
-    infoX+=ctx.measureText('₩ '+p.price.toLocaleString()).width+20;
-  }
-  if(p.visitDate){
-    ctx.fillStyle='rgba(200,184,152,0.55)';
-    ctx.fillText('·',infoX,infoY);infoX+=14;
-    ctx.fillText(p.visitDate,infoX,infoY);
-  }
-
-  // 우측: 워터마크
-  ctx.fillStyle='rgba(201,168,108,0.3)';
-  ctx.font=`400 10px "DM Sans",sans-serif`;
-  ctx.textAlign='right';ctx.letterSpacing='1px';
-  ctx.fillText('커플 맛집 투어 기록',phX-28,infoY);
-  ctx.letterSpacing='0px';
-  ctx.textAlign='left';
-
-  return {cv,ctx,W,H,cat,type,phX,phY,phW,phH};
+async function _renderShareCard(p, fmtId){
+  const {cv,ctx,phX,phY,phW,phH,fmtId:usedFmt}=_buildShareCanvas(p,fmtId);
+  const cover=(p.photos&&(p.photos[p.mainPhotoIdx||0]||p.photos[0]))||(p.photoUrls&&p.photoUrls[0]);
+  return new Promise(resolve=>{
+    const doBlob=()=>cv.toBlob(resolve,'image/png');
+    if(cover&&cover.startsWith('data:')){
+      const img=new Image();
+      img.onload=()=>{
+        _sc_drawPhoto(ctx,img,phX,phY,phW,phH);
+        // 오버레이 방향에 따라 분기
+        if(usedFmt==='card'||usedFmt==='wide') _sc_photoOverlayH(ctx,phX,phY,phW,phH,usedFmt==='wide'?140:100);
+        else _sc_photoOverlayV(ctx,phX,phY,phW,phH,Math.floor(phH*0.45));
+        doBlob();
+      };
+      img.onerror=doBlob;
+      img.src=cover;
+    } else { doBlob(); }
+  });
 }
 
 async function shareAsCard(id){
   const p=getPlace(id);if(!p)return;
+  _currentSharePlace=p;
+  _currentShareFmt='card';
   toast('카드 생성 중... ✨');
   await _loadShareFonts();
-  const {cv,ctx,W,H,phX,phY,phW,phH}=_buildShareCanvas(p);
-  const cover=(p.photos&&(p.photos[p.mainPhotoIdx||0]||p.photos[0]))||(p.photoUrls&&p.photoUrls[0]);
-
-  const doShow=()=>{
-    cv.toBlob(blob=>{
-      const previewUrl=URL.createObjectURL(blob);
-      _showShareSheet(p,blob,previewUrl);
-    },'image/png');
-  };
-
-  if(cover&&cover.startsWith('data:')){
-    const img=new Image();
-    img.onload=()=>{
-      ctx.save();
-      ctx.beginPath();ctx.rect(phX,phY,phW,phH);ctx.clip();
-      const ir=img.naturalWidth/img.naturalHeight,cr=phW/phH;
-      let sx,sy,sw,sh;
-      if(ir>cr){sw=img.naturalHeight*cr;sh=img.naturalHeight;sx=(img.naturalWidth-sw)/2;sy=0;}
-      else{sw=img.naturalWidth;sh=img.naturalWidth/cr;sx=0;sy=(img.naturalHeight-sh)/2;}
-      ctx.drawImage(img,sx,sy,sw,sh,phX,phY,phW,phH);
-      ctx.restore();
-      // 사진 위 비네팅 + 좌측 페이드
-      const vGrad=ctx.createRadialGradient(phX+phW*0.5,phH*0.5,phH*0.1,phX+phW*0.5,phH*0.5,phH*0.75);
-      vGrad.addColorStop(0,'rgba(0,0,0,0)');
-      vGrad.addColorStop(1,'rgba(0,0,0,0.45)');
-      ctx.fillStyle=vGrad;ctx.fillRect(phX,phY,phW,phH);
-      const grad=ctx.createLinearGradient(phX,0,phX+80,0);
-      grad.addColorStop(0,'rgba(13,10,6,0.98)');
-      grad.addColorStop(1,'rgba(13,10,6,0)');
-      ctx.fillStyle=grad;ctx.fillRect(phX,phY,80,phH);
-      doShow();
-    };
-    img.onerror=doShow;
-    img.src=cover;
-  } else { doShow(); }
+  const blob=await _renderShareCard(p,'card');
+  const previewUrl=URL.createObjectURL(blob);
+  _showShareSheet(p,blob,previewUrl);
 }
 
 let _shareBlob=null,_sharePreviewUrl=null;
@@ -3137,72 +3212,100 @@ function _showShareSheet(p,blob,previewUrl){
 
   const isNativeShare=!!(navigator.share&&navigator.canShare);
   const body=document.getElementById('share-body');
+
+  // 사이즈 선택 버튼 렌더
+  const fmtBtns=SHARE_FMTS.map(f=>`
+    <button onclick="switchShareFmt('${f.id}')" id="sh-fmt-${f.id}"
+      style="flex:1;padding:8px 6px;border-radius:10px;border:1.5px solid ${_currentShareFmt===f.id?'var(--gold)':'var(--bd)'};
+      background:${_currentShareFmt===f.id?'rgba(201,168,108,0.12)':'var(--sf2)'};
+      color:${_currentShareFmt===f.id?'var(--gold)':'var(--tx2)'};font-size:11px;font-weight:700;cursor:pointer;
+      transition:all .2s;line-height:1.4">
+      <div style="font-size:16px;margin-bottom:2px">${f.icon}</div>
+      <div>${f.label}</div>
+      <div style="font-size:9px;opacity:.7">${f.desc}</div>
+    </button>`).join('');
+
   body.innerHTML=`
-    <img src="${previewUrl}" style="width:100%;border-radius:10px;margin-bottom:14px;box-shadow:0 4px 16px var(--sh);display:block">
+    <div style="display:flex;gap:6px;margin-bottom:12px">${fmtBtns}</div>
+    <div id="sh-preview-wrap" style="position:relative;margin-bottom:14px">
+      <img id="sh-preview-img" src="${previewUrl}"
+        style="width:100%;border-radius:10px;box-shadow:0 4px 16px var(--sh);display:block;max-height:340px;object-fit:contain;background:#0D0A06">
+      <div id="sh-loading" style="display:none;position:absolute;inset:0;border-radius:10px;background:rgba(13,10,6,.75);
+        display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--gold)">생성 중...</div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <button class="share-opt-btn" id="sh-copy-img">
-        <span style="font-size:26px">📋</span><span>이미지 복사</span>
-      </button>
-      <button class="share-opt-btn" id="sh-save">
-        <span style="font-size:26px">💾</span><span>PNG 저장</span>
-      </button>
-      ${isNativeShare?`
-      <button class="share-opt-btn" id="sh-native" style="grid-column:1/-1">
-        <span style="font-size:26px">📤</span><span>공유하기 (카카오톡 등)</span>
-      </button>`:
-      `<button class="share-opt-btn" id="sh-kakao">
-        <span style="font-size:26px">💬</span><span>카카오톡<br>텍스트 복사</span>
-      </button>`}
-      <button class="share-opt-btn" ${isNativeShare?'':'style="grid-column:1/-1"'} id="sh-text">
-        <span style="font-size:26px">📝</span><span>텍스트 복사</span>
-      </button>
+      <button class="share-opt-btn" id="sh-copy-img"><span style="font-size:26px">📋</span><span>이미지 복사</span></button>
+      <button class="share-opt-btn" id="sh-save"><span style="font-size:26px">💾</span><span>PNG 저장</span></button>
+      ${isNativeShare
+        ?`<button class="share-opt-btn" id="sh-native" style="grid-column:1/-1"><span style="font-size:26px">📤</span><span>공유하기 (카카오톡 등)</span></button>`
+        :`<button class="share-opt-btn" id="sh-kakao"><span style="font-size:26px">💬</span><span>카카오톡<br>텍스트 복사</span></button>`}
+      <button class="share-opt-btn" ${isNativeShare?'':'style="grid-column:1/-1"'} id="sh-text"><span style="font-size:26px">📝</span><span>텍스트 복사</span></button>
     </div>`;
 
-  // 이미지 클립보드 복사
+  // 사이즈 전환
+  window.switchShareFmt=async(fmtId)=>{
+    if(fmtId===_currentShareFmt)return;
+    _currentShareFmt=fmtId;
+    // 버튼 스타일 업데이트
+    SHARE_FMTS.forEach(f=>{
+      const btn=document.getElementById('sh-fmt-'+f.id);
+      if(!btn)return;
+      const active=f.id===fmtId;
+      btn.style.borderColor=active?'var(--gold)':'var(--bd)';
+      btn.style.background=active?'rgba(201,168,108,0.12)':'var(--sf2)';
+      btn.style.color=active?'var(--gold)':'var(--tx2)';
+    });
+    const ld=document.getElementById('sh-loading');
+    if(ld)ld.style.display='flex';
+    const newBlob=await _renderShareCard(_currentSharePlace,fmtId);
+    if(_sharePreviewUrl)URL.revokeObjectURL(_sharePreviewUrl);
+    _shareBlob=newBlob;
+    _sharePreviewUrl=URL.createObjectURL(newBlob);
+    const img=document.getElementById('sh-preview-img');
+    if(img)img.src=_sharePreviewUrl;
+    if(ld)ld.style.display='none';
+  };
+
+  // 이미지 복사
   document.getElementById('sh-copy-img').onclick=async()=>{
     try{
       if(window.ClipboardItem&&navigator.clipboard&&navigator.clipboard.write){
         await navigator.clipboard.write([new ClipboardItem({'image/png':_shareBlob})]);
         toast('이미지가 클립보드에 복사되었습니다 📋');
-      } else {
-        toast('이 환경에서는 이미지 복사가 지원되지 않습니다\nPNG 저장을 이용해주세요');
-      }
-    }catch(e){
-      toast('복사 실패 — PNG 저장을 이용해주세요');
-    }
+      } else { toast('PNG 저장을 이용해주세요'); }
+    }catch(e){ toast('복사 실패 — PNG 저장을 이용해주세요'); }
   };
 
   // PNG 저장
   document.getElementById('sh-save').onclick=()=>{
+    const fmt=SHARE_FMTS.find(f=>f.id===_currentShareFmt)||SHARE_FMTS[0];
     const url=URL.createObjectURL(_shareBlob);
     const a=document.createElement('a');
-    a.href=url;a.download=`${p.name}-맛집카드.png`;a.click();
+    a.href=url;a.download=`${p.name}-${fmt.label}.png`;a.click();
     setTimeout(()=>URL.revokeObjectURL(url),1500);
-    toast('PNG가 저장되었습니다 💾');
+    toast('PNG 저장 완료 💾');
   };
 
-  // Web Share API (모바일 카카오톡 포함)
+  // Web Share API
   if(isNativeShare){
     document.getElementById('sh-native').onclick=async()=>{
-      const file=new File([_shareBlob],`${p.name}-맛집카드.png`,{type:'image/png'});
+      const fmt=SHARE_FMTS.find(f=>f.id===_currentShareFmt)||SHARE_FMTS[0];
+      const file=new File([_shareBlob],`${p.name}-${fmt.label}.png`,{type:'image/png'});
       if(navigator.canShare({files:[file]})){
         try{await navigator.share({title:p.name,text:`🍽️ ${p.name} — ${p.category}`,files:[file]});}
         catch(e){if(e.name!=='AbortError')toast('공유 취소');}
       } else {
-        // 파일 공유 불가 → 텍스트만
         try{await navigator.share({title:p.name,text:_buildShareText(p)});}
         catch(e){if(e.name!=='AbortError')toast('공유 취소');}
       }
     };
   } else {
-    // 카카오톡 텍스트 복사 (PC용)
     document.getElementById('sh-kakao').onclick=async()=>{
       await _copyText(_buildShareText(p));
       toast('카카오톡에서 붙여넣기 해주세요 💬');
     };
   }
 
-  // 텍스트 복사
   document.getElementById('sh-text').onclick=async()=>{
     await _copyText(_buildShareText(p));
     toast('텍스트가 복사되었습니다 📝');
