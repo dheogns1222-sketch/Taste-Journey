@@ -901,6 +901,7 @@ async function handleKakaoAuth(kakaoId,kakaoNickname,kakaoProfileImage){
     const role=codeType==='partner'?'PARTNER':'GUEST';
     const nu={id:newId,username:kakaoNickname,kakaoId,kakaoNickname,kakaoProfileImage,profileChoice:'kakao',role,nickname:kakaoNickname,avatar:emojiForRole(role),createdAt:new Date().toISOString()};
     users.push(nu);saveUsers(users);ME=nu;
+    FB.push();
     if(sessionStorage.getItem('tj_remember_me')!=='0')DB.s('sid',ME.id);
     else{DB.d('sid');sessionStorage.setItem('tj_sid',ME.id);}
     showProfileSelect();return;
@@ -938,6 +939,7 @@ function selectProfile(choice){
   document.getElementById('profile-select-modal').classList.add('hidden');
   _pendingKakao=null;
   DB.s('sid',ME.id);
+  FB.push();
   startApp();
 }
 
@@ -3049,8 +3051,7 @@ async function exchangeKakaoCode(code){
   const restKey=DB.g('kakao_rest_key','')||'2555299e1c4bc22a9ec366758ed74265';
   const jsKey=DB.g('kakao_js_key','')||'66fe8f5aca605768aa3bdee158b7c20d';
   if(!restKey){showAuthError('카카오 REST API 키가 없습니다. 어드민에게 문의하세요.');return;}
-  if(!window.Kakao){showAuthError('카카오 SDK가 로드되지 않았습니다.');return;}
-  try{if(!Kakao.isInitialized()&&jsKey)Kakao.init(jsKey);}catch(e){}
+  try{if(window.Kakao&&!Kakao.isInitialized()&&jsKey)Kakao.init(jsKey);}catch(e){}
   const redirectUri=location.origin+location.pathname.replace(/\/$/,'')||location.origin;
   try{
     const res=await fetch('https://kauth.kakao.com/oauth/token',{
@@ -3090,9 +3091,10 @@ async function exchangeKakaoCode(code){
     sessionStorage.removeItem('tj_kakao_flow');
     history.replaceState(null,null,location.pathname||'/');
     const pendingCode=sessionStorage.getItem('tj_kakao_code')||'';
-    if(pendingCode){_pendingInviteCode=pendingCode;sessionStorage.removeItem('tj_kakao_code');}
     if(fbParam&&!DB.g('fb_url','')){DB.s('fb_url',fbParam);}
     switchTab('login');
+    // switchTab이 _pendingInviteCode를 초기화하므로 반드시 이후에 복원
+    if(pendingCode){_pendingInviteCode=pendingCode;sessionStorage.removeItem('tj_kakao_code');}
     showAuthError('카카오 로그인 처리 중...');
     (async()=>{
       if(FB.url)await FB.pull();
