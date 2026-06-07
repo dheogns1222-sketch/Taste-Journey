@@ -3172,6 +3172,7 @@ function _buildShareCanvas(p, fmtId='card'){
   else phInfo=_sc_layoutCard(ctx,p,cat,type,W,H,hasPhoto);
   if(fmtId==='card'||fmtId==='wide') _sc_goldLine(ctx,H);
   return {cv,ctx,W,H,cat,type,phX:phInfo.phX,phY:phInfo.phY,phW:phInfo.phW,phH:phInfo.phH,fmtId};
+}
 
 async function _renderShareCard(p, fmtId){
   const {cv,ctx,phX,phY,phW,phH,fmtId:usedFmt}=_buildShareCanvas(p,fmtId);
@@ -3784,4 +3785,4 @@ document.addEventListener('click',e=>{
 });
 </script>
 </body>
-</html>
+</html
