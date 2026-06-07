@@ -2,12 +2,19 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="apple-touch-icon" href="icon-180.png">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#0D0A06">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Taste Journey">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Taste Journey">
+<meta name="description" content="커플 맛집 투어 기록">
 <title>Taste Journey 🍽️</title>
 <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
 <style>
@@ -2671,6 +2678,7 @@ function renderProfile(){
       ${isOwner()?`<div class="profile-row"><span class="profile-row-lbl">👥 멤버 관리</span><button style="background:var(--pr);color:#fff;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700" onclick="openUsersModal()">관리</button></div>`:''}
       ${isOwner()?`<div class="profile-row"><span class="profile-row-lbl">💾 데이터 관리</span><button style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--tx2)" onclick="openDataModal()">관리</button></div>`:''}
       <div class="profile-row"><span class="profile-row-lbl">✏️ 닉네임</span><div style="display:flex;gap:6px;align-items:center"><input id="nickname-input" type="text" value="${esc(ME.nickname||ME.username)}" style="width:110px;font-size:13px;padding:5px 8px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx)"><button onclick="saveNickname()" style="background:var(--pr);color:#fff;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700">저장</button></div></div>
+      ${!isStandalone()?`<div class="profile-row"><span class="profile-row-lbl">📲 앱으로 설치</span><button style="background:var(--gold);color:#0D0A06;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700" onclick="installApp()">홈 화면에 추가</button></div>`:''}
       <div class="profile-row"><span class="profile-row-lbl">🚪 로그아웃</span><button style="background:#ffebee;border:1px solid #ffcdd2;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--pv)" onclick="logout()">로그아웃</button></div>
     </div>
     ${kakaoSection}
@@ -3544,15 +3552,47 @@ function updateHeader(){
   }
 }
 
+let _deferredInstallPrompt=null;
 function initPWA(){
-  const manifest={name:'Taste Journey',short_name:'TJ',start_url:'.',display:'standalone',background_color:'#1A1208',theme_color:'#C48A4A',icons:[{src:'icon-192.png',sizes:'192x192',type:'image/png'},{src:'icon-512.png',sizes:'512x512',type:'image/png'}]};
-  const ml=document.createElement('link');ml.rel='manifest';
-  ml.href='data:application/manifest+json,'+encodeURIComponent(JSON.stringify(manifest));
-  document.head.appendChild(ml);
   if('serviceWorker' in navigator){
     const sw=`self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));});`;
     navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'text/javascript'}))).catch(()=>{});
   }
+  window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault();
+    _deferredInstallPrompt=e;
+  });
+}
+function isStandalone(){return window.matchMedia('(display-mode:standalone)').matches||navigator.standalone===true;}
+function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent);}
+function installApp(){
+  if(isStandalone()){toast('이미 앱으로 설치되어 있습니다 ✅');return;}
+  if(_deferredInstallPrompt){
+    _deferredInstallPrompt.prompt();
+    _deferredInstallPrompt.userChoice.then(()=>{_deferredInstallPrompt=null;renderProfile();});
+    return;
+  }
+  if(isIOS()){
+    const m=document.createElement('div');
+    m.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center';
+    m.innerHTML=`<div style="background:var(--sf);border-radius:20px 20px 0 0;padding:28px 24px 40px;width:100%;max-width:480px;text-align:center">
+      <div style="font-size:32px;margin-bottom:12px">📱</div>
+      <div style="font-size:17px;font-weight:700;margin-bottom:8px">홈 화면에 추가</div>
+      <div style="font-size:14px;color:var(--tx2);line-height:1.6;margin-bottom:20px">
+        아래 Safari 공유 버튼을 탭하고<br>
+        <strong style="color:var(--tx1)">'홈 화면에 추가'</strong>를 선택하세요
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--sf2);border-radius:12px;padding:12px;margin-bottom:20px">
+        <span style="font-size:22px">⬆️</span>
+        <span style="font-size:13px;color:var(--tx2)">하단 공유 버튼 → 홈 화면에 추가</span>
+      </div>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="background:var(--gold);color:#0D0A06;border-radius:12px;padding:12px 32px;font-size:15px;font-weight:700">확인</button>
+    </div>`;
+    m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+    document.body.appendChild(m);
+    return;
+  }
+  toast('브라우저 메뉴 → "홈 화면에 추가" 를 선택해주세요');
 }
 
 async function startApp(){
@@ -3583,62 +3623,4 @@ async function exchangeKakaoCode(code){
       })
     });
     const data=await res.json();
-    if(!data.access_token){showAuthError('카카오 토큰 오류: '+(data.error_description||data.error||'알 수 없는 오류'));return;}
-    const profileRes=await fetch('https://kapi.kakao.com/v2/user/me',{
-      headers:{'Authorization':'Bearer '+data.access_token}
-    });
-    const r=await profileRes.json();
-    if(!r.id){showAuthError('카카오 프로필 조회 실패. 다시 시도해주세요.');return;}
-    showAuthError('');
-    const kakaoId=String(r.id);
-    const profile=r.kakao_account&&r.kakao_account.profile;
-    const nickname=(profile&&profile.nickname)||'사용자';
-    const profileImage=(profile&&profile.profile_image_url)||'';
-    await handleKakaoAuth(kakaoId,nickname,profileImage);
-  }catch(e){showAuthError('카카오 연결 오류: '+e.message);}
-}
-
-(function init(){
-  const urlP=new URLSearchParams(location.search);
-  const fbParam=urlP.get('fburl');
-  const codeParam=urlP.get('code');
-
-  // ① 카카오 OAuth 콜백 처리 (authorization code flow — 최우선)
-  const isKakaoFlow=sessionStorage.getItem('tj_kakao_flow')==='1';
-  if(codeParam&&isKakaoFlow){
-    sessionStorage.removeItem('tj_kakao_flow');
-    history.replaceState(null,null,location.pathname||'/');
-    const pendingCode=sessionStorage.getItem('tj_kakao_code')||'';
-    if(fbParam&&!DB.g('fb_url','')){DB.s('fb_url',fbParam);}
-    switchTab('login');
-    // switchTab이 _pendingInviteCode를 초기화하므로 반드시 이후에 복원
-    if(pendingCode){_pendingInviteCode=pendingCode;sessionStorage.removeItem('tj_kakao_code');}
-    showAuthError('카카오 로그인 처리 중...');
-    (async()=>{
-      if(FB.url)await FB.pull();
-      await exchangeKakaoCode(codeParam);
-    })();
-    return;
-  }
-
-  // ② URL 파라미터 파싱 (초대 링크 / fburl)
-  if(fbParam&&!DB.g('fb_url','')){DB.s('fb_url',fbParam);}
-  switchTab('login');
-  if(codeParam){
-    const invEl=document.getElementById('invite-input');
-    if(invEl)invEl.value=codeParam;
-    switchTab('signup');
-  }
-
-  // ③ Firebase URL은 하드코딩으로 자동 연동됨
-  const sid=DB.g('sid')||sessionStorage.getItem('tj_sid');
-  if(sid){const u=getUsers().find(x=>x.id===sid);if(u){ME=u;startApp();return;}}
-})();
-
-document.addEventListener('click',e=>{
-  if(!e.target.closest('#f-name')&&!e.target.closest('#name-drop')){const nd=document.getElementById('name-drop');if(nd)nd.classList.add('hidden');}
-  if(!e.target.closest('.map-search-bar')){const d=document.getElementById('map-drop');if(d)d.classList.add('hidden');}
-});
-</script>
-</body>
-</html>
+    if(!data.access_token){showAuthError('카카오 토큰 오류: '+(data.error_description||data.error||'알 수 없는 오류'));re
