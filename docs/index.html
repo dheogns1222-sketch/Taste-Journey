@@ -1040,17 +1040,24 @@ const MAP = {
   async _initKakao(key){
     try{
       await new Promise((resolve,reject)=>{
-        if(window.kakao&&window.kakao.maps){kakao.maps.load(resolve);return;}
+        const t=setTimeout(()=>reject(new Error('SDK timeout')),7000);
+        const done=()=>{clearTimeout(t);resolve();};
+        if(window.kakao&&window.kakao.maps){kakao.maps.load(done);return;}
         const s=document.createElement('script');
         s.src='//dapi.kakao.com/v2/maps/sdk.js?appkey='+encodeURIComponent(key)+'&autoload=false&libraries=services';
-        s.onload=()=>kakao.maps.load(resolve);
-        s.onerror=()=>reject(new Error('Kakao SDK load failed'));
+        s.onload=()=>kakao.maps.load(done);
+        s.onerror=()=>{clearTimeout(t);reject(new Error('load failed'));};
         document.head.appendChild(s);
       });
       const mapDiv=document.getElementById('kakao-map');
       this.canvas.style.display='none';
       mapDiv.style.display='block';
       this._kakaoMap=new kakao.maps.Map(mapDiv,{center:new kakao.maps.LatLng(this.lat,this.lng),level:5});
+      // 실제 지도 타일이 로드되는지 확인 (도메인 미등록 시 idle 안 뜰 수 있음)
+      await new Promise((resolve,reject)=>{
+        const t=setTimeout(()=>reject(new Error('map idle timeout')),6000);
+        kakao.maps.event.addListener(this._kakaoMap,'idle',()=>{clearTimeout(t);resolve();});
+      });
       this._useKakao=true;
       kakao.maps.event.addListener(this._kakaoMap,'dblclick',e=>{
         const ll=e.latLng;openAddModal({lat:ll.getLat(),lng:ll.getLng()},false);
@@ -1059,7 +1066,9 @@ const MAP = {
       kakao.maps.event.addListener(this._kakaoMap,'dragstart',()=>hidePinPopup());
       this.drawKakaoPins();
     }catch(e){
-      console.warn('카카오맵 초기화 실패, OSM 사용:',e);
+      console.warn('카카오맵 초기화 실패, OSM 사용:',e.message);
+      this._kakaoMap=null;this._useKakao=false;
+      document.getElementById('kakao-map').style.display='none';
       this._initOSM();
     }
   },
