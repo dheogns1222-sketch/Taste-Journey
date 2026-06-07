@@ -882,7 +882,7 @@ function doKakaoLogin(){
   if(_pendingInviteCode)sessionStorage.setItem('tj_kakao_code',_pendingInviteCode);
   // 카카오 OAuth 인가 코드 flow (authorization code — REST API 키 사용)
   sessionStorage.setItem('tj_kakao_flow','1');
-  const redirectUri=location.origin;
+  const redirectUri=location.origin+location.pathname.replace(/\/$/,'')||location.origin;
   showAuthError('카카오로 이동 중...');
   setTimeout(()=>{
     location.href='https://kauth.kakao.com/oauth/authorize'
@@ -3066,7 +3066,7 @@ async function exchangeKakaoCode(code){
   if(!restKey){showAuthError('카카오 REST API 키가 없습니다. 어드민에게 문의하세요.');return;}
   if(!window.Kakao){showAuthError('카카오 SDK가 로드되지 않았습니다.');return;}
   try{if(!Kakao.isInitialized()&&jsKey)Kakao.init(jsKey);}catch(e){}
-  const redirectUri=location.origin;
+  const redirectUri=location.origin+location.pathname.replace(/\/$/,'')||location.origin;
   try{
     const res=await fetch('https://kauth.kakao.com/oauth/token',{
       method:'POST',
