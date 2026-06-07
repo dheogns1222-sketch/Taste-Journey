@@ -878,32 +878,18 @@ function handleStep(){handleKakaoStep();}
 function doKakaoLogin(){
   const jsKey=DB.g('kakao_js_key','');
   if(!jsKey){showAuthError('카카오 설정 키가 없습니다. 어드민에게 문의하세요.');return;}
-  if(!window.Kakao){showAuthError('카카오 SDK 로드 중입니다. 잠시 후 다시 시도해주세요.');return;}
-  try{
-    if(!_kakaoInited||!Kakao.isInitialized()){Kakao.init(jsKey);_kakaoInited=true;}
-  }catch(e){showAuthError('카카오 초기화 실패: '+e.message);return;}
-  showAuthError('카카오 로그인 창을 여는 중...');
-  Kakao.Auth.login({
-    success:function(authObj){
-      showAuthError('');
-      Kakao.API.request({
-        url:'/v2/user/me',
-        success:async function(res){
-          const kakaoId=String(res.id);
-          const profile=res.kakao_account&&res.kakao_account.profile;
-          const kakaoNickname=(profile&&profile.nickname)||'사용자';
-          const kakaoProfileImage=(profile&&profile.profile_image_url)||'';
-          await handleKakaoAuth(kakaoId,kakaoNickname,kakaoProfileImage);
-        },
-        fail:function(err){showAuthError('프로필 조회 실패. 다시 시도해주세요.');console.error(err);}
-      });
-    },
-    fail:function(err){
-      if(err&&err.error!=='access_denied')showAuthError('카카오 로그인 실패. 다시 시도해주세요.');
-      else showAuthError('');
-      console.error(err);
-    }
-  });
+  // 초대코드/탭 상태 임시 저장
+  if(_pendingInviteCode)sessionStorage.setItem('tj_kakao_code',_pendingInviteCode);
+  // 카카오 OAuth implicit flow (access_token → URL 해시)
+  const redirectUri=location.origin;
+  showAuthError('카카오로 이동 중...');
+  setTimeout(()=>{
+    location.href='https://kauth.kakao.com/oauth/authorize'
+      +'?client_id='+encodeURIComponent(jsKey)
+      +'&redirect_uri='+encodeURIComponent(redirectUri)
+      +'&response_type=token'
+      +'&prompt=login';
+  },300);
 }
 
 async function handleKakaoAuth(kakaoId,kakaoNickname,kakaoProfileImage){
@@ -3074,7 +3060,40 @@ async function startApp(){
 }
 
 (function init(){
-  // URL 파라미터 파싱 (초대 링크)
+  // ① 카카오 OAuth 콜백 처리 (access_token in hash — 최우선)
+  const _hash=location.hash.slice(1);
+  if(_hash.includes('access_token')){
+    const hp=new URLSearchParams(_hash);
+    const kakaoToken=hp.get('access_token');
+    if(kakaoToken){
+      history.replaceState(null,null,location.pathname||'/');
+      const pendingCode=sessionStorage.getItem('tj_kakao_code')||'';
+      if(pendingCode){_pendingInviteCode=pendingCode;sessionStorage.removeItem('tj_kakao_code');}
+      switchTab('login');
+      showAuthError('카카오 프로필 불러오는 중...');
+      (async()=>{
+        if(FB.url)await FB.pull();
+        const jsKey=DB.g('kakao_js_key','');
+        if(!jsKey||!window.Kakao){showAuthError('카카오 키가 없습니다. 어드민에게 문의하세요.');return;}
+        try{if(!Kakao.isInitialized())Kakao.init(jsKey);}catch(e){showAuthError('카카오 초기화 오류');return;}
+        Kakao.Auth.setAccessToken(kakaoToken);
+        Kakao.API.request({
+          url:'/v2/user/me',
+          success:async function(res){
+            showAuthError('');
+            const kakaoId=String(res.id);
+            const profile=res.kakao_account&&res.kakao_account.profile;
+            const nickname=(profile&&profile.nickname)||'사용자';
+            const profileImage=(profile&&profile.profile_image_url)||'';
+            await handleKakaoAuth(kakaoId,nickname,profileImage);
+          },
+          fail:function(err){showAuthError('카카오 프로필 조회 실패. 다시 시도해주세요.');console.error(err);}
+        });
+      })();
+      return;
+    }
+  }
+  // ② URL 파라미터 파싱 (초대 링크)
   const urlP=new URLSearchParams(location.search);
   const fbParam=urlP.get('fburl');
   const codeParam=urlP.get('code');
@@ -3085,7 +3104,7 @@ async function startApp(){
     if(invEl)invEl.value=codeParam;
     switchTab('signup');
   }
-  // Firebase URL은 하드코딩으로 자동 연동됨
+  // ③ Firebase URL은 하드코딩으로 자동 연동됨
   const sid=DB.g('sid');
   if(sid){const u=getUsers().find(x=>x.id===sid);if(u){ME=u;startApp();return;}}
 })();
