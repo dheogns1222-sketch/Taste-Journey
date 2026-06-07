@@ -2837,158 +2837,245 @@ function likePlace(id){
   openDetail(id);
 }
 
-/* ─── 공유 카드 캔버스 빌더 ─── */
+/* ─── 공유 카드 캔버스 빌더 (Luxury Edition) ─── */
+async function _loadShareFonts(){
+  if(window._shareFontsLoaded)return;
+  try{
+    const pf=new FontFace('Playfair Display','url(https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvUDQZNLo_U2r.woff2)',{weight:'700'});
+    const df=new FontFace('DM Sans','url(https://fonts.gstatic.com/s/dmsans/v15/rP2Hp2ywxg089UriCZOIHQ.woff2)',{weight:'400'});
+    const db=new FontFace('DM Sans','url(https://fonts.gstatic.com/s/dmsans/v15/rP2Hp2ywxg089UriCZOIHQ.woff2)',{weight:'600'});
+    await Promise.all([pf.load(),df.load(),db.load()]);
+    document.fonts.add(pf);document.fonts.add(df);document.fonts.add(db);
+    window._shareFontsLoaded=true;
+  }catch(e){window._shareFontsLoaded=true;}/* 폰트 로드 실패시 폴백으로 진행 */
+}
+
 function _buildShareCanvas(p){
   const cat=C.CATS.find(c=>c.k===p.category);
   const type=p.type||(p.status==='wishlist'?'wish':'visited');
-  const W=800,H=440,hH=68,fH=52;
+  const W=900,H=500;
   const cv=document.createElement('canvas');cv.width=W;cv.height=H;
   const ctx=cv.getContext('2d');
-
-  // ── 배경 ──
-  ctx.fillStyle='#F0E8DC';ctx.fillRect(0,0,W,H);
-
-  // ── 헤더 ──
-  ctx.fillStyle='#2C1508';ctx.fillRect(0,0,W,hH);
-  // 앱 타이틀
-  ctx.fillStyle='rgba(255,255,255,0.92)';
-  ctx.font='bold 16px -apple-system,system-ui,sans-serif';
-  ctx.textAlign='left';ctx.textBaseline='middle';
-  ctx.fillText('🍽️ Taste Journey',22,hH/2);
-  // 우측: 맛집 카드 공유
-  ctx.fillStyle='rgba(196,138,74,0.95)';
-  ctx.font='bold 13px -apple-system,system-ui,sans-serif';
-  ctx.textAlign='right';
-  ctx.fillText('🔗 맛집 카드 공유',W-22,hH/2);
-
-  // ── 좌측 골드 액센트 바 ──
-  ctx.fillStyle='#C48A4A';ctx.fillRect(0,0,6,H);
-
-  // ── 사진 영역 (우측 240px, 헤더~푸터) ──
-  const phX=W-240,phY=hH,phW=240,phH=H-hH-fH;
-  // 사진 플레이스홀더 (카테고리 아이콘)
-  ctx.fillStyle='rgba(0,0,0,0.05)';ctx.fillRect(phX,phY,phW,phH);
-  ctx.fillStyle='rgba(196,138,74,0.15)';ctx.fillRect(phX,phY,phW,phH);
-  ctx.font='72px -apple-system,system-ui,sans-serif';
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(cat?cat.e:'🍴',phX+phW/2,phY+phH/2);
-  // 텍스트-사진 구분선
-  ctx.strokeStyle='rgba(196,138,74,0.2)';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(phX,phY);ctx.lineTo(phX,phY+phH);ctx.stroke();
-
-  // ── 텍스트 영역 ──
-  const tx=22,txR=phX-18;
-  let y=hH+14;
-
-  // 방문상태 배지
   const isWish=type==='wish';
-  ctx.fillStyle=isWish?'rgba(25,101,192,0.9)':'rgba(46,125,50,0.9)';
-  const bdgW=86,bdgH=19;
-  ctx.beginPath();
-  if(ctx.roundRect)ctx.roundRect(tx,y,bdgW,bdgH,9);
-  else ctx.rect(tx,y,bdgW,bdgH);
-  ctx.fill();
-  ctx.fillStyle='#fff';ctx.font='bold 10px -apple-system,system-ui,sans-serif';
-  ctx.textAlign='left';ctx.textBaseline='middle';
-  ctx.fillText(isWish?'📌 방문예정':'✅ 방문완료',tx+8,y+bdgH/2);
-  y+=bdgH+10;
 
-  // 가게 이름
-  ctx.fillStyle='#1A0A04';
-  ctx.font='bold 28px -apple-system,system-ui,sans-serif';
-  ctx.textBaseline='top';
-  const nameStr=(cat?cat.e+' ':'')+p.name;
-  ctx.fillText(nameStr.length>17?nameStr.slice(0,17)+'…':nameStr,tx,y,txR-tx);
-  y+=34;
+  // ── 배경: 다크 시네마틱 그라디언트 ──
+  const bgGrad=ctx.createLinearGradient(0,0,W,H);
+  bgGrad.addColorStop(0,'#0D0A06');
+  bgGrad.addColorStop(0.5,'#1A1208');
+  bgGrad.addColorStop(1,'#0F0C07');
+  ctx.fillStyle=bgGrad;ctx.fillRect(0,0,W,H);
 
-  // 주소 or 카테고리
-  ctx.fillStyle='#7A5540';ctx.font='13px -apple-system,system-ui,sans-serif';
-  if(p.address){
-    const addr=(p.address||'').trim().split(/\s+/).slice(0,5).join(' ');
-    // 이름 이모지 너비만큼 들여쓰기 (이름 폰트로 측정 후 복원)
-    ctx.save();ctx.font='bold 26px -apple-system,system-ui,sans-serif';
-    const eiW=cat?Math.min(Math.max(ctx.measureText(cat.e+' ').width,24),40):0;
-    ctx.restore();ctx.font='13px -apple-system,system-ui,sans-serif';
-    ctx.fillText('📍 '+addr,tx+eiW,y,txR-tx-eiW);
-  } else {
-    ctx.fillText(p.category,tx,y,txR-tx);
+  // ── 미묘한 노이즈 텍스처 레이어 ──
+  for(let i=0;i<1200;i++){
+    const x=Math.random()*W,y=Math.random()*H;
+    ctx.fillStyle=`rgba(201,168,108,${Math.random()*0.025})`;
+    ctx.fillRect(x,y,1,1);
   }
+
+  // ── 사진 영역 (우측 320px) ──
+  const phW=320,phX=W-phW,phY=0,phH=H;
+
+  // 사진 없을 때 플레이스홀더
+  ctx.fillStyle='#130F08';ctx.fillRect(phX,phY,phW,phH);
+  const phGrad=ctx.createLinearGradient(phX,0,phX+phW,0);
+  phGrad.addColorStop(0,'rgba(201,168,108,0.08)');
+  phGrad.addColorStop(1,'rgba(201,168,108,0.03)');
+  ctx.fillStyle=phGrad;ctx.fillRect(phX,phY,phW,phH);
+  ctx.font='80px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.globalAlpha=0.25;
+  ctx.fillText(cat?cat.e:'🍴',phX+phW/2,phH/2);
+  ctx.globalAlpha=1;
+
+  // 사진-텍스트 경계 그라디언트 (오른쪽 → 왼쪽)
+  const divGrad=ctx.createLinearGradient(phX-60,0,phX+20,0);
+  divGrad.addColorStop(0,'rgba(13,10,6,1)');
+  divGrad.addColorStop(1,'rgba(13,10,6,0)');
+  ctx.fillStyle=divGrad;ctx.fillRect(phX-60,0,80,H);
+
+  // ── 좌측 골드 세로선 ──
+  const goldLineGrad=ctx.createLinearGradient(0,0,0,H);
+  goldLineGrad.addColorStop(0,'rgba(201,168,108,0)');
+  goldLineGrad.addColorStop(0.3,'rgba(201,168,108,0.9)');
+  goldLineGrad.addColorStop(0.7,'rgba(232,200,126,1)');
+  goldLineGrad.addColorStop(1,'rgba(201,168,108,0)');
+  ctx.fillStyle=goldLineGrad;ctx.fillRect(0,0,3,H);
+
+  // ── 텍스트 영역 레이아웃 ──
+  const tx=32,txMaxW=phX-tx-24;
+  let y=44;
+
+  // ── 앱 브랜드 라인 ──
+  const pf=window._shareFontsLoaded?'Playfair Display':'Georgia';
+  ctx.fillStyle='rgba(232,200,126,0.55)';
+  ctx.font=`600 11px "DM Sans",sans-serif`;
+  ctx.textAlign='left';ctx.textBaseline='top';
+  ctx.letterSpacing='3px';
+  ctx.fillText('TASTE  JOURNEY',tx,y);
+  ctx.letterSpacing='0px';
   y+=20;
 
-  // 메뉴
-  if(p.menu){
-    ctx.fillStyle='#5A3A20';ctx.font='12px -apple-system,system-ui,sans-serif';
-    ctx.fillText('🍴 '+p.menu,tx,y,txR-tx);y+=18;
+  // 얇은 골드 구분선
+  ctx.strokeStyle='rgba(201,168,108,0.3)';ctx.lineWidth=0.5;
+  ctx.beginPath();ctx.moveTo(tx,y);ctx.lineTo(tx+txMaxW,y);ctx.stroke();
+  y+=16;
+
+  // ── 방문상태 배지 ──
+  const bdgLabel=isWish?'방문 예정':'방문 완료';
+  const bdgColor=isWish?'rgba(100,149,237,0.18)':'rgba(201,168,108,0.15)';
+  const bdgBorder=isWish?'rgba(100,149,237,0.6)':'rgba(201,168,108,0.6)';
+  ctx.font=`500 10px "DM Sans",sans-serif`;
+  const bdgTW=ctx.measureText(bdgLabel).width;
+  const bdgW=bdgTW+28,bdgH=20;
+  ctx.fillStyle=bdgColor;
+  ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(tx,y,bdgW,bdgH,10);else ctx.rect(tx,y,bdgW,bdgH);
+  ctx.fill();
+  ctx.strokeStyle=bdgBorder;ctx.lineWidth=0.8;
+  ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(tx,y,bdgW,bdgH,10);else ctx.rect(tx,y,bdgW,bdgH);
+  ctx.stroke();
+  ctx.fillStyle=isWish?'rgba(180,200,255,0.9)':'rgba(232,200,126,0.9)';
+  ctx.textBaseline='middle';ctx.fillText(bdgLabel,tx+14,y+bdgH/2);
+  y+=bdgH+18;
+
+  // ── 카테고리 이모지 + 가게 이름 (Playfair Display) ──
+  const catE=cat?cat.e:'🍴';
+  ctx.font=`28px sans-serif`;ctx.textBaseline='top';
+  ctx.fillText(catE,tx,y-2);
+
+  ctx.fillStyle='#F0E8D8';
+  ctx.font=`bold 34px "${pf}",Georgia,serif`;
+  const nameX=tx+38;
+  const nameStr=p.name.length>14?p.name.slice(0,14)+'…':p.name;
+  ctx.fillText(nameStr,nameX,y,txMaxW-(nameX-tx));
+  y+=42;
+
+  // ── 카테고리 텍스트 ──
+  ctx.fillStyle='rgba(201,168,108,0.7)';
+  ctx.font=`400 12px "DM Sans",sans-serif`;
+  ctx.letterSpacing='1.5px';
+  ctx.fillText((p.category||'').toUpperCase(),tx+42,y);
+  ctx.letterSpacing='0px';
+  y+=22;
+
+  // ── 주소 ──
+  if(p.address){
+    const addr=(p.address||'').trim().split(/\s+/).slice(0,4).join(' ');
+    ctx.fillStyle='rgba(200,184,152,0.65)';
+    ctx.font=`400 12px "DM Sans",sans-serif`;
+    ctx.fillText('📍  '+addr,tx,y,txMaxW);
+    y+=20;
   }
   y+=6;
 
-  // 별점 (반별 클립)
+  // ── 구분선 ──
+  ctx.strokeStyle='rgba(201,168,108,0.15)';ctx.lineWidth=0.5;
+  ctx.beginPath();ctx.moveTo(tx,y);ctx.lineTo(tx+txMaxW*0.6,y);ctx.stroke();
+  y+=14;
+
+  // ── 별점 (골드 스타) ──
   if(p.rating){
     const fS=Math.floor(p.rating),hS=p.rating%1>=0.5?1:0,eS=Math.max(0,5-fS-hS);
-    const sz=22;let sX=tx;
-    ctx.font=sz+'px -apple-system,system-ui,sans-serif';ctx.textBaseline='top';
-    for(let i=0;i<fS;i++){ctx.fillStyle='#C48A4A';ctx.fillText('★',sX,y);sX+=sz*0.90;}
+    const sz=20;let sX=tx;
+    ctx.font=sz+'px sans-serif';ctx.textBaseline='top';
+    for(let i=0;i<fS;i++){ctx.fillStyle='#E8C87E';ctx.fillText('★',sX,y);sX+=sz*0.88;}
     if(hS){
       ctx.save();ctx.beginPath();ctx.rect(sX,y-2,sz*0.5,sz+4);ctx.clip();
-      ctx.fillStyle='#C48A4A';ctx.fillText('★',sX,y);ctx.restore();
+      ctx.fillStyle='#E8C87E';ctx.fillText('★',sX,y);ctx.restore();
       ctx.save();ctx.beginPath();ctx.rect(sX+sz*0.5,y-2,sz*0.5,sz+4);ctx.clip();
-      ctx.fillStyle='#C8B89A';ctx.fillText('★',sX,y);ctx.restore();
-      sX+=sz*0.90;
+      ctx.fillStyle='rgba(201,168,108,0.25)';ctx.fillText('★',sX,y);ctx.restore();
+      sX+=sz*0.88;
     }
-    ctx.fillStyle='#C8B89A';
-    for(let i=0;i<eS;i++){ctx.fillText('★',sX,y);sX+=sz*0.90;}
-    ctx.fillStyle='#7A5540';ctx.font='bold 13px -apple-system,system-ui,sans-serif';
-    ctx.textBaseline='top';ctx.fillText(p.rating+'/5',sX+6,y+5);
-    y+=28;
+    ctx.fillStyle='rgba(201,168,108,0.25)';
+    for(let i=0;i<eS;i++){ctx.fillText('★',sX,y);sX+=sz*0.88;}
+    ctx.fillStyle='rgba(201,168,108,0.8)';
+    ctx.font=`600 12px "DM Sans",sans-serif`;
+    ctx.textBaseline='middle';ctx.fillText(p.rating+' / 5',sX+8,y+sz/2);
+    y+=sz+10;
   }
 
-  // 맵기: 🌶 emoji + globalAlpha (ON=선명, OFF=투명)
+  // ── 대표 메뉴 ──
+  if(p.menu){
+    ctx.fillStyle='rgba(200,184,152,0.7)';
+    ctx.font=`400 12px "DM Sans",sans-serif`;
+    ctx.textBaseline='top';
+    const menuStr=p.menu.length>28?p.menu.slice(0,28)+'…':p.menu;
+    ctx.fillText('🍴  '+menuStr,tx,y,txMaxW);
+    y+=18;
+  }
+
+  // ── 맵기 ──
   if(p.spiciness){
-    const esz=16;let sX=tx;
-    ctx.font=esz+'px -apple-system,system-ui,sans-serif';ctx.textBaseline='top';
+    const esz=13;let sX=tx;
+    ctx.font=esz+'px sans-serif';ctx.textBaseline='top';
     for(let i=1;i<=10;i++){
-      ctx.globalAlpha=i<=p.spiciness?1:0.15;
-      ctx.fillText('🌶',sX,y+1);sX+=esz+2;
+      ctx.globalAlpha=i<=p.spiciness?0.9:0.12;
+      ctx.fillText('🌶',sX,y+1);sX+=esz+3;
     }
     ctx.globalAlpha=1;
-    ctx.fillStyle='#7A5540';ctx.font='bold 11px -apple-system,system-ui,sans-serif';
-    ctx.textBaseline='top';ctx.fillText(p.spiciness+'/10',sX+4,y+4);
-    y+=22;
+    ctx.fillStyle='rgba(200,184,152,0.5)';
+    ctx.font=`400 10px "DM Sans",sans-serif`;
+    ctx.textBaseline='middle';ctx.fillText(p.spiciness+'/10',sX+4,y+esz/2);
+    y+=20;
   }
 
-  // 메모 (반투명 박스)
+  // ── 메모 (이탤릭 인용) ──
   if(p.memo){
     y+=6;
-    const mH=36,mW=txR-tx;
-    ctx.fillStyle='rgba(44,21,8,0.06)';
+    ctx.fillStyle='rgba(201,168,108,0.12)';
+    const mH=34,mW=txMaxW;
     ctx.beginPath();
     if(ctx.roundRect)ctx.roundRect(tx,y,mW,mH,6);else ctx.rect(tx,y,mW,mH);
     ctx.fill();
-    ctx.fillStyle='#7A5540';ctx.font='italic 12px -apple-system,system-ui,sans-serif';
+    ctx.strokeStyle='rgba(201,168,108,0.2)';ctx.lineWidth=0.5;
+    ctx.beginPath();
+    ctx.moveTo(tx,y+4);ctx.lineTo(tx,y+mH-4);ctx.stroke();
+    ctx.fillStyle='rgba(200,184,152,0.75)';
+    ctx.font=`italic 400 11px "${pf}",Georgia,serif`;
     ctx.textBaseline='middle';
-    const m=p.memo.length>50?p.memo.slice(0,50)+'…':p.memo;
-    ctx.fillText('"'+m+'"',tx+10,y+mH/2,mW-20);
+    const m=p.memo.length>44?p.memo.slice(0,44)+'…':p.memo;
+    ctx.fillText('"'+m+'"',tx+12,y+mH/2,mW-24);
     y+=mH;
   }
 
-  if(type==='wish'&&p.priority){
-    y+=4;ctx.fillStyle='#6B4226';ctx.font='bold 13px -apple-system,system-ui,sans-serif';
-    ctx.textBaseline='top';
-    ctx.fillText(['','🥇 1순위','🥈 2순위','🥉 3순위','4️⃣ 4순위','5️⃣ 5순위'][p.priority]||'',tx,y);
+  // ── 방문예정 우선순위 ──
+  if(isWish&&p.priority){
+    y+=6;
+    const pLabel=['','1순위','2순위','3순위','4순위','5순위'][p.priority]||'';
+    ctx.fillStyle='rgba(100,149,237,0.7)';
+    ctx.font=`600 11px "DM Sans",sans-serif`;
+    ctx.textBaseline='top';ctx.fillText('⭐ '+pLabel,tx,y);
   }
 
-  // ── 푸터 (다크 바) ──
-  const fY=H-fH;
-  ctx.fillStyle='rgba(44,21,8,0.88)';ctx.fillRect(0,fY,W,fH);
-  ctx.fillStyle='rgba(196,138,74,0.6)';ctx.fillRect(0,fY,W,1);
-  ctx.fillStyle='rgba(255,255,255,0.82)';
-  ctx.font='bold 12px -apple-system,system-ui,sans-serif';
-  ctx.textBaseline='middle';ctx.textAlign='left';
-  if(p.price)ctx.fillText('💰 '+p.price.toLocaleString()+'원',22,fY+16);
-  ctx.textAlign='right';
-  if(p.visitDate)ctx.fillText('📅 '+p.visitDate,W-22,fY+16);
-  ctx.fillStyle='rgba(196,168,130,0.65)';ctx.font='10px -apple-system,system-ui,sans-serif';
-  ctx.textAlign='center';ctx.fillText('커플 맛집 투어 기록 · Taste Journey',W/2,fY+36);
+  // ── 하단 정보 바 ──
+  const fY=H-48;
+  // 구분선
+  ctx.strokeStyle='rgba(201,168,108,0.2)';ctx.lineWidth=0.5;
+  ctx.beginPath();ctx.moveTo(tx,fY);ctx.lineTo(phX-24,fY);ctx.stroke();
+
+  ctx.textBaseline='middle';
+  const infoY=fY+24;
+  ctx.font=`500 11px "DM Sans",sans-serif`;
+  let infoX=tx;
+
+  if(p.price){
+    ctx.fillStyle='rgba(232,200,126,0.8)';
+    ctx.fillText('₩ '+p.price.toLocaleString(),infoX,infoY);
+    infoX+=ctx.measureText('₩ '+p.price.toLocaleString()).width+20;
+  }
+  if(p.visitDate){
+    ctx.fillStyle='rgba(200,184,152,0.55)';
+    ctx.fillText('·',infoX,infoY);infoX+=14;
+    ctx.fillText(p.visitDate,infoX,infoY);
+  }
+
+  // 우측: 워터마크
+  ctx.fillStyle='rgba(201,168,108,0.3)';
+  ctx.font=`400 10px "DM Sans",sans-serif`;
+  ctx.textAlign='right';ctx.letterSpacing='1px';
+  ctx.fillText('커플 맛집 투어 기록',phX-28,infoY);
+  ctx.letterSpacing='0px';
+  ctx.textAlign='left';
 
   return {cv,ctx,W,H,cat,type,phX,phY,phW,phH};
 }
@@ -2996,6 +3083,7 @@ function _buildShareCanvas(p){
 async function shareAsCard(id){
   const p=getPlace(id);if(!p)return;
   toast('카드 생성 중... ✨');
+  await _loadShareFonts();
   const {cv,ctx,W,H,phX,phY,phW,phH}=_buildShareCanvas(p);
   const cover=(p.photos&&(p.photos[p.mainPhotoIdx||0]||p.photos[0]))||(p.photoUrls&&p.photoUrls[0]);
 
@@ -3017,11 +3105,15 @@ async function shareAsCard(id){
       else{sw=img.naturalWidth;sh=img.naturalWidth/cr;sx=0;sy=(img.naturalHeight-sh)/2;}
       ctx.drawImage(img,sx,sy,sw,sh,phX,phY,phW,phH);
       ctx.restore();
-      // 좌측 그라디언트 (텍스트 가독성)
-      const grad=ctx.createLinearGradient(phX,0,phX+60,0);
-      grad.addColorStop(0,'rgba(240,232,220,0.9)');
-      grad.addColorStop(1,'rgba(240,232,220,0)');
-      ctx.fillStyle=grad;ctx.fillRect(phX,phY,60,phH);
+      // 사진 위 비네팅 + 좌측 페이드
+      const vGrad=ctx.createRadialGradient(phX+phW*0.5,phH*0.5,phH*0.1,phX+phW*0.5,phH*0.5,phH*0.75);
+      vGrad.addColorStop(0,'rgba(0,0,0,0)');
+      vGrad.addColorStop(1,'rgba(0,0,0,0.45)');
+      ctx.fillStyle=vGrad;ctx.fillRect(phX,phY,phW,phH);
+      const grad=ctx.createLinearGradient(phX,0,phX+80,0);
+      grad.addColorStop(0,'rgba(13,10,6,0.98)');
+      grad.addColorStop(1,'rgba(13,10,6,0)');
+      ctx.fillStyle=grad;ctx.fillRect(phX,phY,80,phH);
       doShow();
     };
     img.onerror=doShow;
