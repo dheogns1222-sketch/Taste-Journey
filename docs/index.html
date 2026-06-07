@@ -2222,7 +2222,7 @@ function renderProfile(){
   const _avIsImg=ME.avatar&&(ME.avatar.startsWith('data:')||ME.avatar.startsWith('http'));
   const _avEmoji=emojiForRole(ME.role);
   const avatarHTML=_avIsImg?
-    `<img class="avatar-photo" src="${ME.avatar}" style="width:68px;height:68px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.5)">`):
+    `<img class="avatar-photo" src="${ME.avatar}" style="width:68px;height:68px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.5)">`:
     `<div class="profile-avatar" style="font-size:56px">${ME.avatar&&!_avIsImg?ME.avatar:_avEmoji}</div>`;
 
   // Kakao keys (OWNER only)
