@@ -2748,43 +2748,60 @@ function openProfileModal(){
 function openUsersModal(){
   const users=getUsers();
   const body=document.getElementById('users-body');
-  body.innerHTML=users.map(u=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd)">
-      <span style="font-size:22px">${u.role==='OWNER'?'🐶':u.role==='PARTNER'?'🐻':'👤'}</span>
-      <div style="flex:1">
-        <div style="font-size:14px;font-weight:700">${esc(u.username)}</div>
-        <div style="font-size:11px;color:var(--tx3)">${C.ROLE_LBL[u.role]||u.role}</div>
+  const roleIcon=r=>r==='OWNER'?'🐶':r==='PARTNER'?'🐻':'👤';
+  const roleBadgeStyle=r=>r==='OWNER'?'background:#3d2200;color:#d4a017;border:1px solid #d4a01766':'background:var(--sf2);border:1px solid var(--bd);color:var(--tx2)';
+  body.innerHTML=users.map(u=>{
+    const isMe=u.id===ME.id;
+    const canManage=isOwner()&&!isMe;
+    let roleButtons='';
+    if(canManage){
+      if(u.role!=='OWNER') roleButtons+=`<button onclick="changeRole('${u.id}','OWNER')" style="background:#3d2200;color:#d4a017;border:1px solid #d4a01766;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700">OWNER</button>`;
+      if(u.role!=='PARTNER') roleButtons+=`<button onclick="changeRole('${u.id}','PARTNER')" style="background:var(--ac);color:#fff;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700">PARTNER</button>`;
+      if(u.role!=='GUEST') roleButtons+=`<button onclick="changeRole('${u.id}','GUEST')" style="background:var(--sf2);border:1px solid var(--bd);border-radius:7px;padding:4px 9px;font-size:11px;font-weight:600;color:var(--tx2)">GUEST</button>`;
+    }
+    return `
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--bd)">
+      <span style="font-size:22px">${roleIcon(u.role)}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:700">${esc(u.username)}${isMe?' <span style="font-size:10px;color:var(--tx3)">(나)</span>':''}</div>
+        <span style="font-size:10px;font-weight:700;border-radius:5px;padding:2px 7px;${roleBadgeStyle(u.role)}">${C.ROLE_LBL[u.role]||u.role}</span>
       </div>
-      ${u.id!==ME.id&&isOwner()?`
-        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-          ${u.role==='GUEST'?`<button onclick="promoteUser('${u.id}','PARTNER')" style="background:var(--ac);color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700">PARTNER 승급</button>`:''}
-          ${u.role==='PARTNER'?`<button onclick="promoteUser('${u.id}','GUEST')" style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--tx2)">GUEST 강등</button>`:''}
-          ${u.role!=='OWNER'?`<button onclick="deleteUser('${u.id}')" style="background:#ffebee;border:1px solid #ffcdd2;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;color:#e53935">🗑️ 삭제</button>`:''}
+      ${canManage?`
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+          <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">${roleButtons}</div>
+          <button onclick="kickUser('${u.id}')" style="background:#ffebee;border:1px solid #ffcdd2;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;color:#e53935;width:100%">🚫 퇴출</button>
         </div>
       `:''}
-    </div>`).join('');
+    </div>`;
+  }).join('');
   openModal('modal-users');
 }
 
-function promoteUser(uid,role){
-  const users=getUsers();
-  const u=users.find(x=>x.id===uid);
-  if(u){u.role=role;saveUsers(users);toast(`${u.username}님을 ${C.ROLE_LBL[role]}로 변경했습니다`);openUsersModal();}
-}
-function deleteUser(uid){
+function changeRole(uid,role){
   if(!isOwner())return;
   const users=getUsers();
   const u=users.find(x=>x.id===uid);
-  if(!u||u.role==='OWNER'){toast('OWNER 계정은 삭제할 수 없습니다');return;}
-  if(!confirm(`"${u.username}" 계정을 삭제하시겠습니까?`))return;
+  if(!u||u.id===ME.id){toast('자기 자신의 역할은 변경할 수 없습니다');return;}
+  const prev=u.role;
+  u.role=role;
+  saveUsers(users);
+  FB.push();
+  toast(`${u.username}님: ${C.ROLE_LBL[prev]} → ${C.ROLE_LBL[role]}`);
+  openUsersModal();
+}
+function kickUser(uid){
+  if(!isOwner())return;
+  const users=getUsers();
+  const u=users.find(x=>x.id===uid);
+  if(!u||u.id===ME.id){toast('자기 자신은 퇴출할 수 없습니다');return;}
+  if(!confirm(`"${u.username}" 멤버를 퇴출하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`))return;
   const codes=getInviteCodes();
   const remainingUsers=users.filter(x=>x.id!==uid);
-  // usedBy가 uid인 코드 + usedBy가 null/undefined인데 해당 유저 외엔 존재하지 않는 orphan 코드 제거
   const validIds=new Set(remainingUsers.map(x=>x.id));
   saveInviteCodes(codes.filter(c=>!c.used||(c.usedBy&&validIds.has(c.usedBy))));
-  saveUsers(users.filter(x=>x.id!==uid));
+  saveUsers(remainingUsers);
   FB.push();
-  toast(`${u.username} 계정을 삭제했습니다`);
+  toast(`${u.username} 멤버를 퇴출했습니다`);
   openUsersModal();
 }
 
