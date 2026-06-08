@@ -1673,6 +1673,7 @@ const MAP = {
       kakao.maps.event.addListener(this._kakaoMap,'click',()=>{if(!MAP._justClickedMarker)hidePinPopup();MAP._justClickedMarker=false;});
       kakao.maps.event.addListener(this._kakaoMap,'dragstart',()=>hidePinPopup());
       this.drawKakaoPins();
+      this.fitToPins();
     }catch(e){
       console.warn('카카오맵 초기화 실패, OSM 사용:',e.message);
       this._kakaoMap=null;this._useKakao=false;
@@ -1705,6 +1706,24 @@ const MAP = {
       ((pid)=>kakao.maps.event.addListener(marker,'click',()=>{MAP._justClickedMarker=true;showPinPopup(pid);}))(p.id);
       this._kakaoMarkers[p.id]=marker;
     }
+  },
+
+  fitToPins(){
+    if(!this._useKakao||!this._kakaoMap)return;
+    const places=getPlaces().filter(p=>
+      p.lat!=null&&p.lng!=null&&
+      (mapFilter==='all'||p.category===mapFilter)
+    );
+    if(!places.length)return;
+    if(places.length===1){
+      this._kakaoMap.setCenter(new kakao.maps.LatLng(places[0].lat,places[0].lng));
+      this._kakaoMap.setLevel(4);
+      return;
+    }
+    const bounds=new kakao.maps.LatLngBounds();
+    places.forEach(p=>bounds.extend(new kakao.maps.LatLng(p.lat,p.lng)));
+    // 패딩: 상단(검색바+필터바)=130, 우=70, 하(nav)=90, 좌=70
+    this._kakaoMap.setBounds(bounds,130,70,90,70);
   },
 
   tileXY(lat,lng,z){
@@ -2052,6 +2071,7 @@ function setMapFilter(f){
   mapFilter=f;
   renderMapFilterBar();
   MAP.draw();
+  MAP.fitToPins();
 }
 function renderMapFilterBar(){
   const bar=document.getElementById('map-filter-bar');
