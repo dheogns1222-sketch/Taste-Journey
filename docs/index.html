@@ -1175,6 +1175,8 @@ const FB = {
   get url(){return DB.g('fb_url','https://taste-journey-d3176-default-rtdb.asia-southeast1.firebasedatabase.app');},
   _pushTimer:null,
   _pollTimer:null,
+  _stream:null,
+  _justPushed:false,
 
   push(){
     // 디바운스: 연속 변경 시 마지막 상태 한 번만 전송 (연속 삭제 드롭 방지)
@@ -1189,6 +1191,12 @@ const FB = {
       const payload={users:getUsers(),places:getPlaces(),invite_codes:getInviteCodes(),kakao_rest_key:DB.g('kakao_rest_key',''),kakao_js_key:DB.g('kakao_js_key',''),pushedAt:new Date().toISOString()};
       await fetch(url+'/tj.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
       showSyncStatus('☁️ 동기화 완료');
+      // 내 push로 인한 SSE 이벤트는 무시 (불필요한 pull 방지)
+      this._justPushed=true;
+      setTimeout(()=>{this._justPushed=false;},2500);
+      // 자동 백업: 날짜별 스냅샷 저장 (fire-and-forget)
+      const bakDate=new Date().toISOString().slice(0,10);
+      fetch(url+'/tj_bak/'+bakDate+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,backedUpAt:new Date().toISOString()})}).catch(()=>{});
     }catch(e){showSyncStatus('⚠️ 동기화 실패',true);}
   },
 
@@ -1209,6 +1217,34 @@ const FB = {
       if(d.kakao_js_key)DB.s('kakao_js_key',d.kakao_js_key);
       return true;
     }catch(e){return false;}
+  },
+
+  // ── 실시간 SSE 스트림 (Firebase EventSource) ──────────
+  startStream(){
+    this.stopStream();
+    this.stopPoll();
+    if(!this.url)return;
+    try{
+      // pushedAt 필드만 감시 — 변경 감지 시 전체 pull
+      const src=new EventSource(this.url+'/tj/pushedAt.json');
+      src.addEventListener('put',async()=>{
+        if(this._justPushed)return; // 내가 push한 것은 무시
+        const ok=await this.pull();
+        if(ok&&ME){renderView();updateHeader();showSyncStatus('🔄 데이터 갱신됨');}
+      });
+      src.addEventListener('error',()=>{
+        // SSE 연결 실패 → 폴링으로 자동 fallback
+        src.close();this._stream=null;
+        if(!this._pollTimer)this.startPoll();
+      });
+      this._stream=src;
+    }catch(e){
+      this.startPoll(); // EventSource 미지원 환경 fallback
+    }
+  },
+
+  stopStream(){
+    if(this._stream){this._stream.close();this._stream=null;}
   },
 
   startPoll(){
@@ -1251,7 +1287,7 @@ async function setSyncUrl(){
     showSyncStatus('✅ 연동 완료!');
     const help=document.getElementById('sync-help');
     if(help)help.style.display='block';
-    FB.startPoll();
+    FB.startStream();
     // 로그인 상태면 바로 화면 갱신
     if(ME){renderView();updateHeader();}
   }catch(e){
@@ -1568,7 +1604,7 @@ function guestLogin(){
 
 function logout(){
   ME=null;DB.d('sid');
-  FB.stopPoll();
+  FB.stopStream();FB.stopPoll();
   document.querySelectorAll('.overlay:not(.hidden)').forEach(el=>{el.classList.add('hidden');});
   document.body.classList.remove('modal-open');
   document.body.style.top='';
@@ -2046,7 +2082,7 @@ function showPinPopup(id){
         (addrShort?'<div style="font-size:10px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📍 '+esc(addrShort)+'</div>':'')+
       '</div>'+
       '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">'+
-        '<button onclick="goToCardFromMap(\''+id+'\')" style="padding:7px 10px;background:var(--pr);color:#fff;border-radius:7px;font-size:11px;font-weight:700;border:none;cursor:pointer;white-space:nowrap">상세보기 →</button>'+
+        '<button onclick="hidePinPopup();openDetail(\''+id+'\')" style="padding:7px 10px;background:var(--pr);color:#fff;border-radius:7px;font-size:11px;font-weight:700;border:none;cursor:pointer;white-space:nowrap">세부정보 →</button>'+
         '<button onclick="hidePinPopup()" style="padding:5px 10px;background:var(--sf2);border:1px solid var(--bd);border-radius:7px;font-size:11px;color:var(--tx2);cursor:pointer">닫기</button>'+
       '</div>'+
     '</div>'+
@@ -3928,7 +3964,7 @@ async function startApp(){
   if(_mg)savePlaces(_pl);
   document.getElementById('auth').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  if(FB.url){showSyncStatus('🔄 데이터 불러오는 중...');await FB.pull();FB.startPoll();updateHeader();}
+  if(FB.url){showSyncStatus('🔄 데이터 불러오는 중...');await FB.pull();FB.startStream();updateHeader();}
   // 앱 탭으로 돌아올 때 즉시 pull (모바일 백그라운드 throttle 대응)
   if(!window._visHandlerSet){
     window._visHandlerSet=true;
