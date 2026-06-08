@@ -163,6 +163,20 @@ a{color:var(--gold)}
   cursor:pointer;padding:6px;transition:color .2s;
 }
 .auth-guest:hover{color:var(--gold2)}
+/* Auth: ID/PW + 방법선택 UI */
+.auth-or{text-align:center;font-size:11px;color:rgba(240,232,216,.35);letter-spacing:1px;padding:2px 0;position:relative}
+.auth-or::before,.auth-or::after{content:'';position:absolute;top:50%;width:38%;height:1px;background:rgba(255,255,255,.1)}
+.auth-or::before{left:0}.auth-or::after{right:0}
+.auth-pw-btn{width:100%;padding:12px;background:var(--pr);color:#fff;border-radius:var(--r-xs);font-size:14px;font-weight:700;border:none;cursor:pointer;transition:all .2s var(--ease);letter-spacing:.2px}
+.auth-pw-btn:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.auth-pw-btn:active{transform:scale(.98)}
+.auth-method-btn{flex:1;padding:10px 8px;border-radius:var(--r-xs);font-size:12px;font-weight:700;border:1.5px solid rgba(255,255,255,.12);cursor:pointer;transition:all .2s var(--ease);background:rgba(255,255,255,.04);color:rgba(240,232,216,.6)}
+.auth-method-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(184,136,58,.12)}
+.auth-field-row{display:flex;flex-direction:column;gap:8px}
+.auth-field-row input{padding:11px 14px;font-size:14px}
+.auth-signup-done{width:100%;padding:13px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0D0A06;border-radius:var(--r-xs);font-size:14px;font-weight:700;border:none;cursor:pointer;transition:all .2s var(--ease);letter-spacing:.2px;margin-top:2px}
+.auth-signup-done:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.auth-signup-done:active{transform:scale(.98)}
 /* Auth light form fields */
 #auth input,#auth textarea,#auth select{
   background:rgba(255,255,255,.07);
@@ -737,8 +751,33 @@ nav{
       <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">로그인</button>
       <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">회원가입</button>
     </div>
+    <!-- 로그인 탭: 아이디/비밀번호 폼 -->
+    <div id="login-pw-wrap">
+      <div class="auth-field-row">
+        <input id="login-id" type="text" placeholder="아이디" autocomplete="username" style="padding:11px 14px;font-size:14px">
+        <input id="login-pw-field" type="password" placeholder="비밀번호" autocomplete="current-password" style="padding:11px 14px;font-size:14px">
+      </div>
+      <button class="auth-pw-btn" onclick="doPasswordLogin()" style="margin-top:8px">로그인</button>
+      <div class="auth-or" style="margin:10px 0 6px">또는</div>
+    </div>
+    <!-- 회원가입 탭: 초대코드 입력 -->
     <input type="text" id="invite-input" placeholder="초대 코드를 입력해주세요" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="display:none">
     <div class="auth-note hidden" id="auth-note"></div>
+    <!-- 회원가입 탭: 가입 방법 선택 (코드 확인 후 표시) -->
+    <div id="signup-method-wrap" style="display:none">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button id="smb-pw" class="auth-method-btn" onclick="setSignupMethod('password')">🔑 아이디/비밀번호</button>
+        <button id="smb-kk" class="auth-method-btn" onclick="setSignupMethod('kakao')">💬 카카오 연동</button>
+      </div>
+      <div id="signup-pw-fields" style="display:none">
+        <div class="auth-field-row">
+          <input id="signup-id" type="text" placeholder="아이디 (영문·숫자·_, 4-16자)" autocomplete="username" style="padding:11px 14px;font-size:14px">
+          <input id="signup-pw-1" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="new-password" style="padding:11px 14px;font-size:14px">
+          <input id="signup-pw-2" type="password" placeholder="비밀번호 확인" autocomplete="new-password" style="padding:11px 14px;font-size:14px">
+        </div>
+        <button class="auth-signup-done" onclick="doPasswordSignup()">✅ 회원가입 완료</button>
+      </div>
+    </div>
     <div id="auth-error" style="color:#e53935;font-size:12px;font-weight:600;text-align:center;min-height:18px;margin:-4px 0 2px;padding:0 4px"></div>
     <button class="kakao-btn" onclick="handleKakaoStep()" id="kakao-submit">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="#000"><path d="M12 3C6.48 3 2 6.69 2 11.25c0 2.91 1.82 5.47 4.59 6.99L5.5 22l5.22-3.19c.41.06.83.09 1.28.09 5.52 0 10-3.69 10-8.25C22 6.69 17.52 3 12 3z"/></svg>
@@ -801,7 +840,7 @@ nav{
       <canvas id="map-canvas"></canvas>
       <div id="kakao-map"></div>
       <button class="map-fab write-only" onclick="openAddModal(null,false)" title="장소 추가">＋</button>
-      <div id="map-filter-bar" style="position:absolute;top:56px;left:0;right:0;z-index:9;padding:4px 58px 4px 8px;display:flex;align-items:center;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;pointer-events:all;scrollbar-width:none">
+      <div id="map-filter-bar" style="position:absolute;top:56px;left:0;right:62px;z-index:9;padding:4px 0 4px 8px;display:flex;align-items:center;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;pointer-events:all;scrollbar-width:none">
         <div class="map-legend">
           <div class="legend-row"><div class="legend-dot" style="background:#D32F2F"></div>완료</div>
           <div class="legend-row"><div class="legend-dot" style="background:#1565C0"></div>예정</div>
@@ -1236,20 +1275,35 @@ let _pendingInviteCode='';
 
 function switchTab(t){
   authTab=t;
-  _signupStep=1;_pendingInviteCode='';
+  _signupStep=1;_pendingInviteCode='';_signupMethod='';
   document.getElementById('tab-login').classList.toggle('active',t==='login');
   document.getElementById('tab-signup').classList.toggle('active',t==='signup');
   const invEl=document.getElementById('invite-input');
   const note=document.getElementById('auth-note');
   const errEl=document.getElementById('auth-error');
   const btnLabel=document.getElementById('kakao-btn-label');
+  const loginWrap=document.getElementById('login-pw-wrap');
+  const methodWrap=document.getElementById('signup-method-wrap');
+  const pwFields=document.getElementById('signup-pw-fields');
+  const kakaoBtn=document.getElementById('kakao-submit');
+  const smbPw=document.getElementById('smb-pw');
+  const smbKk=document.getElementById('smb-kk');
   if(errEl)errEl.textContent='';
   if(t==='signup'){
+    if(loginWrap)loginWrap.style.display='none';
+    if(methodWrap)methodWrap.style.display='none';
+    if(pwFields)pwFields.style.display='none';
+    if(kakaoBtn)kakaoBtn.style.display='';
+    if(smbPw){smbPw.classList.remove('active');}
+    if(smbKk){smbKk.classList.remove('active');}
     if(invEl){invEl.style.display='';invEl.value='';}
     if(btnLabel)btnLabel.textContent='초대 코드 확인 →';
     note.innerHTML='초대 코드를 입력해주세요.<br><small style="color:var(--tx3)">어드민에게 코드를 받아야 가입할 수 있습니다</small>';
     note.classList.remove('hidden');
   }else{
+    if(loginWrap)loginWrap.style.display='';
+    if(methodWrap)methodWrap.style.display='none';
+    if(pwFields)pwFields.style.display='none';
     if(invEl)invEl.style.display='none';
     if(btnLabel)btnLabel.textContent='카카오로 로그인';
     note.classList.add('hidden');
@@ -1258,6 +1312,88 @@ function switchTab(t){
 // ─── Kakao 인증 관련 ─────────────────────────────────
 let _pendingKakao = null;
 let _kakaoInited = false;
+let _signupMethod = ''; // 'password' | 'kakao'
+
+// ── 비밀번호 해시 (SHA-256 + salt)
+async function hashPassword(pw){
+  const enc=new TextEncoder();
+  const data=enc.encode('tj-v1-'+pw);
+  const buf=await crypto.subtle.digest('SHA-256',data);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── 아이디/비밀번호 로그인
+async function doPasswordLogin(){
+  const id=(document.getElementById('login-id')||{value:''}).value.trim();
+  const pw=(document.getElementById('login-pw-field')||{value:''}).value;
+  if(!id||!pw){showAuthError('아이디와 비밀번호를 입력해주세요');return;}
+  showAuthError('로그인 중...');
+  const hash=await hashPassword(pw);
+  if(FB.url){await FB.pull();}
+  const users=getUsers();
+  const user=users.find(u=>u.username===id&&u.passwordHash===hash);
+  if(!user){showAuthError('아이디 또는 비밀번호가 일치하지 않습니다');return;}
+  ME=user;
+  const rememberMe=(document.getElementById('remember-me')||{checked:true}).checked;
+  if(rememberMe)DB.s('sid',ME.id);
+  else{DB.d('sid');sessionStorage.setItem('tj_sid',ME.id);}
+  showAuthError('');
+  startApp();
+}
+
+// ── 아이디/비밀번호 회원가입
+async function doPasswordSignup(){
+  const id=(document.getElementById('signup-id')||{value:''}).value.trim();
+  const pw1=(document.getElementById('signup-pw-1')||{value:''}).value;
+  const pw2=(document.getElementById('signup-pw-2')||{value:''}).value;
+  if(!id){showAuthError('아이디를 입력해주세요');return;}
+  if(!/^[a-zA-Z0-9_]{4,16}$/.test(id)){showAuthError('아이디: 영문·숫자·언더스코어만 사용 (4-16자)');return;}
+  if(pw1.length<6){showAuthError('비밀번호는 6자 이상이어야 합니다');return;}
+  if(pw1!==pw2){showAuthError('비밀번호가 일치하지 않습니다');return;}
+  if(!_pendingInviteCode){showAuthError('초대 코드가 없습니다. 처음부터 다시 시도해주세요');return;}
+  showAuthError('가입 처리 중...');
+  if(FB.url)await FB.pull();
+  const users=getUsers();
+  if(users.find(u=>u.username===id)){showAuthError('이미 사용 중인 아이디입니다');return;}
+  const hash=await hashPassword(pw1);
+  const newId=Date.now().toString();
+  const codeType=useInviteCode(_pendingInviteCode,newId);
+  if(!codeType){showAuthError('초대 코드 오류. 처음부터 다시 시도해주세요');return;}
+  const role=codeType==='partner'?'PARTNER':'GUEST';
+  const nu={id:newId,username:id,nickname:id,passwordHash:hash,role,
+    kakaoId:null,kakaoNickname:null,kakaoProfileImage:null,
+    avatar:emojiForRole(role),createdAt:new Date().toISOString()};
+  users.push(nu);saveUsers(users);ME=nu;
+  FB.push();
+  const rememberMe=(document.getElementById('remember-me')||{checked:true}).checked;
+  if(rememberMe)DB.s('sid',ME.id);
+  else{DB.d('sid');sessionStorage.setItem('tj_sid',ME.id);}
+  showAuthError('');
+  toast('🎉 가입 완료! 환영합니다');
+  startApp();
+}
+
+// ── 가입 방법 선택 (password / kakao)
+function setSignupMethod(method){
+  _signupMethod=method;
+  const pwFields=document.getElementById('signup-pw-fields');
+  const kakaoBtn=document.getElementById('kakao-submit');
+  const smbPw=document.getElementById('smb-pw');
+  const smbKk=document.getElementById('smb-kk');
+  if(smbPw)smbPw.classList.toggle('active',method==='password');
+  if(smbKk)smbKk.classList.toggle('active',method==='kakao');
+  if(method==='password'){
+    if(pwFields)pwFields.style.display='';
+    if(kakaoBtn)kakaoBtn.style.display='none';
+  }else{
+    if(pwFields)pwFields.style.display='none';
+    if(kakaoBtn){
+      kakaoBtn.style.display='';
+      const lbl=document.getElementById('kakao-btn-label');
+      if(lbl)lbl.textContent='카카오로 계속하기';
+    }
+  }
+}
 
 function emojiForRole(role){
   return role==='OWNER'?'👑':role==='PARTNER'?'💜':'⭐';
@@ -1288,18 +1424,43 @@ async function handleKakaoStep(){
     if(invEl)invEl.style.display='none';
     const note=document.getElementById('auth-note');
     const errEl=document.getElementById('auth-error');
-    const btnLabel=document.getElementById('kakao-btn-label');
+    const kakaoBtn=document.getElementById('kakao-submit');
     const roleLabel=found.type==='partner'?'파트너 💜':'게스트 ⭐';
-    note.innerHTML=`✅ 코드 확인 완료! <strong>${roleLabel}</strong>로 가입합니다.<br>카카오 계정으로 계속해주세요.`;
+    note.innerHTML=`✅ 코드 확인 완료! <strong>${roleLabel}</strong>로 가입합니다.<br>가입 방법을 선택해주세요.`;
     note.classList.remove('hidden');
     if(errEl)errEl.textContent='';
-    if(btnLabel)btnLabel.textContent='카카오로 계속하기';
+    // 방법 선택 UI 표시, 카카오 버튼 숨김
+    const methodWrap=document.getElementById('signup-method-wrap');
+    if(methodWrap)methodWrap.style.display='';
+    if(kakaoBtn)kakaoBtn.style.display='none';
+    return;
+  }
+  // _signupStep===2 && _signupMethod==='kakao': 카카오로 계속
+  if(authTab==='signup'&&_signupStep===2&&_signupMethod==='kakao'){
+    doKakaoLogin();
     return;
   }
   doKakaoLogin();
 }
 // 하위 호환성
 function handleStep(){handleKakaoStep();}
+
+// ── 카카오 계정 연동 (프로필에서 호출)
+function linkKakaoAccount(){
+  if(!ME){toast('먼저 로그인해주세요');return;}
+  sessionStorage.setItem('tj_kakao_link',ME.id);
+  sessionStorage.setItem('tj_kakao_flow','1');
+  const restKey=DB.g('kakao_rest_key','')||'2555299e1c4bc22a9ec366758ed74265';
+  const redirectUri=location.origin+location.pathname.replace(/\/$/,'')||location.origin;
+  toast('카카오 연동 페이지로 이동합니다...');
+  setTimeout(()=>{
+    const authUrl='https://kauth.kakao.com/oauth/authorize'
+      +'?client_id='+encodeURIComponent(restKey)
+      +'&redirect_uri='+encodeURIComponent(redirectUri)
+      +'&response_type=code&prompt=login';
+    location.href=authUrl;
+  },600);
+}
 
 function doKakaoLogin(){
   const restKey=DB.g('kakao_rest_key','')||'2555299e1c4bc22a9ec366758ed74265';
@@ -1320,6 +1481,31 @@ function doKakaoLogin(){
 }
 
 async function handleKakaoAuth(kakaoId,kakaoNickname,kakaoProfileImage){
+  // 0. 카카오 연동 모드 (기존 ID/PW 계정에 카카오 연결)
+  const linkUserId=sessionStorage.getItem('tj_kakao_link');
+  if(linkUserId){
+    sessionStorage.removeItem('tj_kakao_link');
+    if(FB.url)await FB.pull();
+    const users=getUsers();
+    const targetUser=users.find(u=>u.id===linkUserId);
+    if(!targetUser){toast('연동 오류: 사용자를 찾을 수 없습니다');return;}
+    // 이미 다른 계정에 연동된 카카오ID인지 확인
+    const alreadyLinked=users.find(u=>u.kakaoId===kakaoId&&u.id!==linkUserId);
+    if(alreadyLinked){
+      ME=targetUser;
+      const sid=DB.g('sid','');if(sid)DB.s('sid',ME.id);else sessionStorage.setItem('tj_sid',ME.id);
+      toast('이 카카오 계정은 이미 다른 계정에 연동되어 있습니다');
+      startApp();return;
+    }
+    targetUser.kakaoId=kakaoId;
+    targetUser.kakaoNickname=kakaoNickname;
+    targetUser.kakaoProfileImage=kakaoProfileImage;
+    saveUsers(users);ME=targetUser;FB.push();
+    const sid=DB.g('sid','');if(sid)DB.s('sid',ME.id);else sessionStorage.setItem('tj_sid',ME.id);
+    toast('카카오 계정이 연동되었습니다 ✅');
+    startApp();return;
+  }
+
   _pendingKakao={kakaoId,kakaoNickname,kakaoProfileImage};
   if(FB.url)await FB.pull();
   const users=getUsers();
@@ -2684,6 +2870,7 @@ function renderProfile(){
       <div class="profile-row"><span class="profile-row-lbl">✏️ 닉네임</span><div style="display:flex;gap:6px;align-items:center"><input id="nickname-input" type="text" value="${esc(ME.nickname||ME.username)}" style="width:110px;font-size:13px;padding:5px 8px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx)"><button onclick="saveNickname()" style="background:var(--pr);color:#fff;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700">저장</button></div></div>
       ${!isStandalone()?`<div class="profile-row"><span class="profile-row-lbl">📲 앱으로 설치</span><button style="background:var(--gold);color:#0D0A06;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700" onclick="installApp()">홈 화면에 추가</button></div>`:''}
       <div class="profile-row"><span class="profile-row-lbl">🚪 로그아웃</span><button style="background:#ffebee;border:1px solid #ffcdd2;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--pv)" onclick="logout()">로그아웃</button></div>
+      ${!ME.kakaoId?`<div class="profile-row"><span class="profile-row-lbl">🔗 카카오 연동</span><button style="background:#FEE500;color:#000;border-radius:8px;padding:5px 14px;font-size:12px;font-weight:700;border:none;cursor:pointer" onclick="linkKakaoAccount()">카카오 연동하기</button></div>`:''}
     </div>
     ${kakaoSection}
     ${inviteSection}`;
