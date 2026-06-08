@@ -2985,6 +2985,7 @@ function _sc_layoutCard(ctx,p,cat,type,W,H,hasPhoto){
   if(p.address){ctx.font=`400 19px "DM Sans",sans-serif`;ctx.fillStyle='rgba(240,232,216,0.45)';ctx.fillText('📍 '+p.address.substring(0,32)+(p.address.length>32?'…':''),tx,y);y+=40;}
   // stars
   if(p.rating){_sc_stars(ctx,p.rating,tx,y+18,28,4);ctx.font=`600 20px "DM Sans",sans-serif`;ctx.fillStyle='rgba(232,200,126,0.7)';ctx.textBaseline='middle';ctx.fillText(p.rating+'/5',tx+5*32,y+18);y+=64;}
+  if(p.spiciness){ctx.font=`600 18px "DM Sans",sans-serif`;ctx.fillStyle='rgba(229,57,53,0.85)';ctx.textBaseline='top';const spLv=p.spiciness<=2?'순한맛':p.spiciness<=5?'매운맛':p.spiciness<=8?'아주매운':'극한매운';ctx.fillText('🌶 '+p.spiciness+'/10 '+spLv,tx,y);y+=38;}
   // memo
   if(p.memo){
     ctx.fillStyle='rgba(201,168,108,0.7)';ctx.fillRect(tx,y,3,56);
@@ -3044,6 +3045,7 @@ function _sc_layoutSquare(ctx,p,cat,type,W,H,hasPhoto){
   ctx.fillStyle='rgba(232,200,126,0.65)';ctx.letterSpacing='1.2px';
   ctx.fillText((cat?cat.e+' ':'')+p.category.toUpperCase(),48,y);ctx.letterSpacing='0px';y+=40;
   if(p.rating){_sc_stars(ctx,p.rating,48,y+14,26,3);y+=52;}
+  if(p.spiciness){ctx.font=`600 17px "DM Sans",sans-serif`;ctx.fillStyle='rgba(229,57,53,0.85)';ctx.textBaseline='top';const spLv=p.spiciness<=2?'순한맛':p.spiciness<=5?'매운맛':p.spiciness<=8?'아주매운':'극한매운';ctx.fillText('🌶 '+p.spiciness+'/10 '+spLv,48,y);y+=34;}
   if(p.address){ctx.font=`400 17px "DM Sans",sans-serif`;ctx.fillStyle='rgba(240,232,216,0.38)';ctx.fillText('📍 '+p.address.substring(0,34)+(p.address.length>34?'…':''),48,y);y+=34;}
   if(p.memo){ctx.font=`400 italic 20px "Playfair Display",serif`;ctx.fillStyle='rgba(240,232,216,0.55)';_sc_wrapText(ctx,'"'+p.memo+'"',48,y,W-96,26);}
   // footer
@@ -3076,6 +3078,7 @@ function _sc_layoutWide(ctx,p,cat,type,W,H,hasPhoto){
   ctx.fillText((cat?cat.e+' ':'')+p.category.toUpperCase(),tx,y);ctx.letterSpacing='0px';y+=52;
   if(p.address){ctx.font=`400 20px "DM Sans",sans-serif`;ctx.fillStyle='rgba(240,232,216,0.42)';ctx.fillText('📍 '+p.address.substring(0,36)+(p.address.length>36?'…':''),tx,y);y+=44;}
   if(p.rating){_sc_stars(ctx,p.rating,tx,y+20,30,5);ctx.font=`600 22px "DM Sans",sans-serif`;ctx.fillStyle='rgba(232,200,126,0.7)';ctx.textBaseline='middle';ctx.fillText(p.rating+'/5',tx+5*35,y+20);y+=68;}
+  if(p.spiciness){ctx.font=`600 20px "DM Sans",sans-serif`;ctx.fillStyle='rgba(229,57,53,0.85)';ctx.textBaseline='top';const spLv=p.spiciness<=2?'순한맛':p.spiciness<=5?'매운맛':p.spiciness<=8?'아주매운':'극한매운';ctx.fillText('🌶 '+p.spiciness+'/10 '+spLv,tx,y);y+=44;}
   if(p.memo){
     ctx.fillStyle='rgba(201,168,108,0.7)';ctx.fillRect(tx,y,3,60);
     ctx.font=`400 italic 24px "Playfair Display","Georgia",serif`;
@@ -3104,11 +3107,11 @@ function _sc_layoutWide(ctx,p,cat,type,W,H,hasPhoto){
 /* ─── 스토리 레이아웃 (1080×1920) ─── */
 function _sc_layoutStory(ctx,p,cat,type,W,H,hasPhoto){
   const isWish=type==='wish';
-  const splitY=Math.floor(H*0.55);
+  const splitY=Math.floor(H*0.44);
   const textY=splitY;
   // 사진 placeholder
   if(!hasPhoto){
-    ctx.fillStyle='#160E06';ctx.fillRect(0,0,W,splitY+60);
+    ctx.fillStyle='#160E06';ctx.fillRect(0,0,W,splitY);
     ctx.font=`260px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.globalAlpha=0.18;
     ctx.fillText(cat?cat.e:'🍴',W/2,splitY/2);ctx.globalAlpha=1;
   }
@@ -3134,6 +3137,7 @@ function _sc_layoutStory(ctx,p,cat,type,W,H,hasPhoto){
   ctx.fillStyle='rgba(232,200,126,0.65)';ctx.letterSpacing='1.2px';
   ctx.fillText((cat?cat.e+' ':'')+p.category.toUpperCase(),44,y);ctx.letterSpacing='0px';y+=50;
   if(p.rating){_sc_stars(ctx,p.rating,44,y+16,30,4);y+=66;}
+  if(p.spiciness){ctx.font=`600 21px "DM Sans",sans-serif`;ctx.fillStyle='rgba(229,57,53,0.85)';ctx.textBaseline='top';const spLv=p.spiciness<=2?'순한맛':p.spiciness<=5?'매운맛':p.spiciness<=8?'아주매운':'극한매운';ctx.fillText('🌶 '+p.spiciness+'/10 '+spLv,44,y);y+=44;}
   if(p.address){ctx.font=`400 19px "DM Sans",sans-serif`;ctx.fillStyle='rgba(240,232,216,0.4)';ctx.fillText('📍 '+p.address.substring(0,28)+(p.address.length>28?'…':''),44,y);y+=42;}
   if(p.memo){
     ctx.fillStyle='rgba(201,168,108,0.65)';ctx.fillRect(44,y,3,60);
@@ -3151,7 +3155,7 @@ function _sc_layoutStory(ctx,p,cat,type,W,H,hasPhoto){
   ctx.fillStyle='rgba(201,168,108,0.35)';ctx.textAlign='center';ctx.font=`400 16px "DM Sans",sans-serif`;ctx.letterSpacing='1px';
   ctx.fillText('커플 맛집 투어 기록 · Taste Journey',W/2,fy);ctx.letterSpacing='0px';
   _sc_goldLine(ctx,H);
-  return {phX:0,phY:0,phW:W,phH:splitY+60};
+  return {phX:0,phY:0,phW:W,phH:splitY};
 }
 
 /* ─── 메인 빌더 ─── */
