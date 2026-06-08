@@ -1990,7 +1990,7 @@ const MAP = {
     if(this._useKakao&&this._kakaoMap){
       try{
         const proj=this._kakaoMap.getProjection();
-        const pt=proj.pointFromCoords(new kakao.maps.LatLng(p.lat,p.lng));
+        const pt=proj.containerPointFromCoords(new kakao.maps.LatLng(p.lat,p.lng));
         return{x:Math.round(pt.x),y:Math.round(pt.y)};
       }catch(e){return{x:0,y:0};}
     }
