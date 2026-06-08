@@ -3702,18 +3702,24 @@ function kickUser(uid){
 /* ═══════════════════════════════════════════════
    AVATAR PICKER
 ═══════════════════════════════════════════════ */
-const AVATAR_EMOJIS = ['🍜','🍕','🍣','🍔','🍰','🍱','🥗','🍛','🍤','🧆','🥘','🍲'];
+const AVATAR_EMOJIS = {
+  OWNER:   ['🐶','🐕','🦮','🐕‍🦺','🐩','🐾','🐈','🐱','🦴','🐾'],
+  PARTNER: ['🐻','🧸','🐼','🐨','🦁','🐯','🦊','🐸','🐺','🦝'],
+  GUEST:   ['🍜','🍕','🍣','🍔','🍰','🍱','🥗','🍛','🍤','🧆','🥘','🍲','🍩','🍪','🧁','☕','🍷','🥂'],
+};
 
 function openAvatarPicker(){
-  if(ME.role==='OWNER'||ME.role==='PARTNER'){
-    toast('역할 아이콘은 변경할 수 없습니다');
-    return;
-  }
-  const grid = document.getElementById('avatar-opts-grid');
-  const cur = ME.avatar||'';
-  grid.innerHTML = AVATAR_EMOJIS.map(e=>`
+  const role=ME.role||'GUEST';
+  const emojis=AVATAR_EMOJIS[role]||AVATAR_EMOJIS.GUEST;
+  const grid=document.getElementById('avatar-opts-grid');
+  const cur=ME.avatar||'';
+  grid.innerHTML=emojis.map(e=>`
     <button class="avatar-opt ${cur===e?'active':''}" onclick="setAvatarEmoji('${e}')">${e}</button>
   `).join('');
+  // 모달 타이틀 역할별 안내
+  const titleMap={OWNER:'🐶 아이콘 선택',PARTNER:'🐻 아이콘 선택',GUEST:'🍽️ 아이콘 선택'};
+  const titleEl=document.querySelector('#modal-avatar .modal-title');
+  if(titleEl)titleEl.textContent=titleMap[role]||'🖼️ 프로필 아이콘 선택';
   openModal('modal-avatar');
 }
 
