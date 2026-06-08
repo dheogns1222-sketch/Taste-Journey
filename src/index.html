@@ -303,6 +303,9 @@ nav{
 .share-opt-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-muted)}
 .share-opt-btn:active{transform:scale(.95)}
 .card-selected{outline:2.5px solid var(--gold)!important;outline-offset:2px}
+.is-guest .write-only{display:none!important}
+#view-stats{padding-bottom:var(--nh)}
+.stats-grid{padding-top:4px!important}
 .pp-icon{font-size:28px;flex-shrink:0}
 .pp-info{flex:1;min-width:0}
 .pp-name{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'DM Sans',sans-serif}
@@ -797,8 +800,8 @@ nav{
       </div>
       <canvas id="map-canvas"></canvas>
       <div id="kakao-map"></div>
-      <button class="map-fab" onclick="openAddModal(null,false)" title="장소 추가">＋</button>
-      <div id="map-filter-bar" style="position:absolute;top:56px;left:0;right:0;z-index:9;padding:4px 8px;display:flex;align-items:center;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;pointer-events:all;scrollbar-width:none">
+      <button class="map-fab write-only" onclick="openAddModal(null,false)" title="장소 추가">＋</button>
+      <div id="map-filter-bar" style="position:absolute;top:56px;left:0;right:0;z-index:9;padding:4px 58px 4px 8px;display:flex;align-items:center;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;pointer-events:all;scrollbar-width:none">
         <div class="map-legend">
           <div class="legend-row"><div class="legend-dot" style="background:#D32F2F"></div>완료</div>
           <div class="legend-row"><div class="legend-dot" style="background:#1565C0"></div>예정</div>
@@ -818,7 +821,7 @@ nav{
           <span class="search-icon">🔍</span>
           <input type="text" id="list-search" placeholder="이름, 카테고리, 주소 검색..." oninput="renderList()">
         </div>
-        <button class="sort-btn" onclick="openAddModal(null,false)" style="background:var(--pr);color:#fff;border-color:var(--pr)">＋</button>
+        <button class="sort-btn write-only" onclick="openAddModal(null,false)" style="background:var(--pr);color:#fff;border-color:var(--pr)">＋</button>
       </div>
       <div class="card-list" id="card-list"></div>
     </div>
@@ -827,7 +830,7 @@ nav{
     <div class="view" id="view-wish">
       <div class="view-toolbar">
         <span style="font-size:15px;font-weight:800;color:var(--pr);flex:1">🕐 방문예정 목록</span>
-        <button onclick="openAddModal(null,true)" style="background:var(--pr);color:#fff;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700">＋ 추가</button>
+        <button class="write-only" onclick="openAddModal(null,true)" style="background:var(--pr);color:#fff;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700">＋ 추가</button>
       </div>
       <div id="wish-list" style="padding-top:8px"></div>
     </div>
@@ -2551,6 +2554,7 @@ function renderWishlist(){
 }
 
 function markAsVisited(id){
+  if(!canWrite()){toast('파트너 이상만 변경 가능합니다');return;}
   updatePlace(id,{type:'visited',visitDate:new Date().toISOString().split('T')[0]});
   toast('방문완료로 변경되었습니다 🎉');
   renderWishlist();
@@ -2663,7 +2667,7 @@ function renderProfile(){
     <div class="profile-hero">
       <div style="position:relative;display:inline-block;margin-bottom:8px">
         ${avatarHTML}
-        ${ME.role!=='OWNER'&&ME.role!=='PARTNER'?`<button onclick="openAvatarPicker()" style="position:absolute;bottom:0;right:-4px;width:24px;height:24px;border-radius:50%;background:#fff;border:1.5px solid var(--bd);font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15)">✏️</button>`:''}
+        <button onclick="openAvatarPicker()" style="position:absolute;bottom:0;right:-4px;width:24px;height:24px;border-radius:50%;background:#fff;border:1.5px solid var(--bd);font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15)">✏️</button>
       </div>
       <div class="profile-name">${esc(ME.nickname||ME.username)}</div>
       ${ME.role==='OWNER'?`<div style="font-size:11px;font-weight:700;color:#D4A060;letter-spacing:.5px;margin-top:2px">✦ OWNER</div>`:ME.role==='PARTNER'?`<div style="font-size:11px;font-weight:700;color:#7986CB;letter-spacing:.5px;margin-top:2px">✦ PARTNER</div>`:''}
@@ -2671,7 +2675,7 @@ function renderProfile(){
     </div>
     <div class="profile-stats">
       <div class="p-stat"><div class="p-stat-num">${visited.length}</div><div class="p-stat-lbl">방문</div></div>
-      <div class="p-stat"><div class="p-stat-num">${wish.length}</div><div class="p-stat-lbl">위시</div></div>
+      <div class="p-stat"><div class="p-stat-num">${wish.length}</div><div class="p-stat-lbl">방문예정</div></div>
       <div class="p-stat"><div class="p-stat-num">${places.length}</div><div class="p-stat-lbl">전체</div></div>
     </div>
     <div class="profile-card">
@@ -3238,12 +3242,22 @@ function _showShareSheet(p,blob,previewUrl){
       <div id="sh-loading" style="display:none;position:absolute;inset:0;border-radius:10px;background:rgba(13,10,6,.75);align-items:center;justify-content:center;font-size:14px;color:var(--gold)">생성 중...</div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <button class="share-opt-btn" id="sh-copy-img"><span style="font-size:26px">📋</span><span>이미지 복사</span></button>
-      <button class="share-opt-btn" id="sh-save"><span style="font-size:26px">💾</span><span>PNG 저장</span></button>
+      <button class="share-opt-btn" id="sh-copy-img" style="background:rgba(94,109,229,.15);border-color:rgba(94,109,229,.45);color:#9BA8F5">
+        <span style="font-size:28px">📋</span><span>이미지 복사</span>
+      </button>
+      <button class="share-opt-btn" id="sh-save" style="background:rgba(67,176,113,.15);border-color:rgba(67,176,113,.45);color:#5ECFA1">
+        <span style="font-size:28px">💾</span><span>PNG 저장</span>
+      </button>
       ${isNativeShare
-        ?`<button class="share-opt-btn" id="sh-native" style="grid-column:1/-1"><span style="font-size:26px">📤</span><span>공유하기 (카카오톡 등)</span></button>`
-        :`<button class="share-opt-btn" id="sh-kakao"><span style="font-size:26px">💬</span><span>카카오톡<br>텍스트 복사</span></button>`}
-      <button class="share-opt-btn" ${isNativeShare?'':'style="grid-column:1/-1"'} id="sh-text"><span style="font-size:26px">📝</span><span>텍스트 복사</span></button>
+        ?`<button class="share-opt-btn" id="sh-native" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(201,168,108,.22),rgba(184,136,58,.32));border-color:var(--gold);color:var(--gold)">
+          <span style="font-size:28px">📤</span><span>공유하기 (카카오톡 등)</span>
+        </button>`
+        :`<button class="share-opt-btn" id="sh-kakao" style="background:rgba(254,229,0,.1);border-color:rgba(254,229,0,.35);color:#FFE066">
+          <span style="font-size:28px">💬</span><span>카카오톡 공유</span>
+        </button>`}
+      <button class="share-opt-btn" id="sh-text" style="grid-column:1/-1;background:var(--sf2);border-color:var(--bd);color:var(--tx2)">
+        <span style="font-size:28px">📝</span><span>텍스트 복사</span>
+      </button>
     </div>`;
 
   // 사이즈 전환
@@ -3657,13 +3671,13 @@ function updateHeader(){
     const avIsImg=ME.avatar&&(ME.avatar.startsWith('data:')||ME.avatar.startsWith('http'));
     pbtn.innerHTML=avIsImg?`<img class="h-avatar" src="${ME.avatar}" alt="">`:ME.avatar||'👤';
   }
+  document.getElementById('app')?.classList.toggle('is-guest',!canWrite());
 }
 
 let _deferredInstallPrompt=null;
 function initPWA(){
   if('serviceWorker' in navigator){
-    const sw=`self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));});`;
-    navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'text/javascript'}))).catch(()=>{});
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
   }
   window.addEventListener('beforeinstallprompt',e=>{
     e.preventDefault();
