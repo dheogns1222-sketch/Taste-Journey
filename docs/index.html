@@ -1173,19 +1173,23 @@ function canInvitePartner(){return ME&&ME.role==='OWNER';}
 ═══════════════════════════════════════════════ */
 const FB = {
   get url(){return DB.g('fb_url','https://taste-journey-d3176-default-rtdb.asia-southeast1.firebasedatabase.app');},
-  _busy:false,
+  _pushTimer:null,
   _pollTimer:null,
 
-  async push(){
+  push(){
+    // 디바운스: 연속 변경 시 마지막 상태 한 번만 전송 (연속 삭제 드롭 방지)
+    if(this._pushTimer)clearTimeout(this._pushTimer);
+    this._pushTimer=setTimeout(()=>this._doPush(),300);
+  },
+
+  async _doPush(){
+    this._pushTimer=null;
     const url=this.url; if(!url)return;
-    if(this._busy)return;
-    this._busy=true;
     try{
       const payload={users:getUsers(),places:getPlaces(),invite_codes:getInviteCodes(),kakao_rest_key:DB.g('kakao_rest_key',''),kakao_js_key:DB.g('kakao_js_key',''),pushedAt:new Date().toISOString()};
       await fetch(url+'/tj.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
       showSyncStatus('☁️ 동기화 완료');
     }catch(e){showSyncStatus('⚠️ 동기화 실패',true);}
-    finally{this._busy=false;}
   },
 
   async pull(){
@@ -3872,14 +3876,16 @@ function updateHeader(){
 }
 
 let _deferredInstallPrompt=null;
+// 페이지 로드 초기에 이벤트 등록 — startApp() 이전에 반드시 캡처해야 함
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  _deferredInstallPrompt=e;
+});
 function initPWA(){
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('/sw.js').catch(()=>{});
   }
-  window.addEventListener('beforeinstallprompt',e=>{
-    e.preventDefault();
-    _deferredInstallPrompt=e;
-  });
+  // beforeinstallprompt는 페이지 로드 초기에 등록 (스크립트 상단 참고)
 }
 function isStandalone(){return window.matchMedia('(display-mode:standalone)').matches||navigator.standalone===true;}
 function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent);}
