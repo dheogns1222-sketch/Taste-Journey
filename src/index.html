@@ -283,16 +283,6 @@ nav{
 .drop-item:hover{background:var(--sf2)}
 .drop-item-name{font-weight:600;color:var(--tx)}
 .drop-item-addr{font-size:11px;color:var(--tx3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.map-fab{
-  position:fixed;bottom:calc(var(--nh)+18px);right:18px;z-index:10;
-  width:56px;height:56px;border-radius:50%;
-  background:linear-gradient(135deg,var(--gold) 0%,var(--gold2) 100%);
-  color:#0D0A06;font-size:28px;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 6px 24px rgba(184,136,58,.5);
-  transition:all .2s var(--spring);
-}
-.map-fab:hover{transform:scale(1.08);box-shadow:0 10px 32px rgba(184,136,58,.6)}
-.map-fab:active{transform:scale(.94)}
 .map-legend{
   display:inline-flex;align-items:center;gap:10px;padding:6px 12px;
   background:var(--sf);border:1px solid var(--bd);
@@ -839,7 +829,6 @@ nav{
       </div>
       <canvas id="map-canvas"></canvas>
       <div id="kakao-map"></div>
-      <button class="map-fab write-only" onclick="openAddModal(null,false)" title="장소 추가">＋</button>
       <div id="map-filter-bar" style="position:absolute;top:56px;left:0;right:62px;z-index:9;padding:4px 0 4px 8px;display:flex;align-items:center;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;pointer-events:all;scrollbar-width:none">
         <div class="map-legend">
           <div class="legend-row"><div class="legend-dot" style="background:#D32F2F"></div>완료</div>
