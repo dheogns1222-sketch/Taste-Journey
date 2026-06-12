@@ -1173,6 +1173,7 @@ function canInvitePartner(){return ME&&ME.role==='OWNER';}
 ═══════════════════════════════════════════════ */
 const FB = {
   get url(){return DB.g('fb_url','https://taste-journey-d3176-default-rtdb.asia-southeast1.firebasedatabase.app');},
+  get secret(){return DB.g('fb_secret','');},
   _pushTimer:null,
   _pollTimer:null,
   _stream:null,
@@ -1189,21 +1190,23 @@ const FB = {
     const url=this.url; if(!url)return;
     try{
       const payload={users:getUsers(),places:getPlaces(),invite_codes:getInviteCodes(),kakao_rest_key:DB.g('kakao_rest_key',''),kakao_js_key:DB.g('kakao_js_key',''),pushedAt:new Date().toISOString()};
-      await fetch(url+'/tj.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const _ps=this.secret;
+      await fetch(url+'/tj.json'+(_ps?'?auth='+_ps:''),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
       showSyncStatus('☁️ 동기화 완료');
       // 내 push로 인한 SSE 이벤트는 무시 (불필요한 pull 방지)
       this._justPushed=true;
       setTimeout(()=>{this._justPushed=false;},2500);
       // 자동 백업: 날짜별 스냅샷 저장 (fire-and-forget)
       const bakDate=new Date().toISOString().slice(0,10);
-      fetch(url+'/tj_bak/'+bakDate+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,backedUpAt:new Date().toISOString()})}).catch(()=>{});
+      fetch(url+'/tj_bak/'+bakDate+'.json'+(_ps?'?auth='+_ps:''),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,backedUpAt:new Date().toISOString()})}).catch(()=>{});
     }catch(e){showSyncStatus('⚠️ 동기화 실패',true);}
   },
 
   async pull(){
     const url=this.url; if(!url)return false;
     try{
-      const r=await fetch(url+'/tj.json?t='+Date.now());
+      const _sec=this.secret;
+      const r=await fetch(url+'/tj.json?t='+Date.now()+(_sec?'&auth='+_sec:''));
       if(!r.ok)return false;
       const d=await r.json();
       if(!d)return false;
@@ -1226,7 +1229,8 @@ const FB = {
     if(!this.url)return;
     try{
       // pushedAt 필드만 감시 — 변경 감지 시 전체 pull
-      const src=new EventSource(this.url+'/tj/pushedAt.json');
+      const _ss=this.secret;
+      const src=new EventSource(this.url+'/tj/pushedAt.json'+(_ss?'?auth='+_ss:''));
       src.addEventListener('put',async()=>{
         if(this._justPushed)return; // 내가 push한 것은 무시
         const ok=await this.pull();
@@ -2594,7 +2598,7 @@ function openEditModal(id){
   fStar=p.rating||0; fSpice=p.spiciness||0;
   fRevisit=p.revisit!=null?p.revisit:-1; fCat=p.category||'';
   fLat=p.lat; fLng=p.lng; fZip=p.zipNo||'';
-  formPhotos=[];
+  formPhotos=(p.photos&&p.photos.length)?p.photos.map(data=>({data,url:data})):[];
   mainPhotoIdx=p.mainPhotoIdx||0;
 
   document.getElementById('f-name').value=p.name||'';
@@ -2723,7 +2727,7 @@ function renderList(){
   let places=getPlaces().filter(p=>(p.type||p.status)!=='wish'&&(p.type||p.status)!=='wishlist');
   if(listCatFilter!=='all')places=places.filter(p=>p.category===listCatFilter);
   if(q)places=places.filter(p=>(p.name+p.category+p.address+p.menu).toLowerCase().includes(q));
-  if(listSort==='newest')places.sort((a,b)=>b.createdAt?.localeCompare(a.createdAt||'')||0);
+  if(listSort==='newest')places.sort((a,b)=>{const va=a.visitDate||'',vb=b.visitDate||'';if(va||vb)return vb.localeCompare(va)||0;return b.createdAt?.localeCompare(a.createdAt||'')||0;});
   else if(listSort==='oldest')places.sort((a,b)=>a.createdAt?.localeCompare(b.createdAt||'')||0);
   else if(listSort==='rating')places.sort((a,b)=>(b.rating||0)-(a.rating||0));
   else if(listSort==='name')places.sort((a,b)=>a.name.localeCompare(b.name,'ko'));
@@ -2762,6 +2766,7 @@ function cardHTML(p){
         ${price?`<span class="card-stat">${price}</span>`:''}
       </div>
       ${p.spiciness?`<div class="card-row" style="margin-top:2px">${spiceHTML(p.spiciness,12)}<span style="font-size:10px;color:var(--tx3);margin-left:3px">${p.spiciness}/10</span></div>`:''}
+      ${p.visitDate&&type!=='wish'?`<div class="card-row" style="margin-top:2px"><span style="font-size:10px;color:var(--tx3)">📅 ${p.visitDate}</span></div>`:''}
       ${(()=>{const cc=(p.comments||[]).length;const nb=hasNewComments(p);return cc?`<div class="card-row" style="margin-top:3px"><span style="font-size:11px;color:var(--tx3)">💬 Total: ${cc}</span>${nb?'<span class="n-badge">N</span>':''}</div>`:''})()}
     </div>
     ${cover?`<img class="card-cover" src="${esc(cover)}" onerror="this.style.display='none'">`
@@ -2774,6 +2779,7 @@ function cardHTML(p){
 ═══════════════════════════════════════════════ */
 function renderWishlist(){
   const places=getPlaces().filter(p=>(p.type||p.status)==='wish'||(p.type||p.status)==='wishlist');
+  places.sort((a,b)=>{const pa=a.priority||99,pb=b.priority||99;if(pa!==pb)return pa-pb;return (b.createdAt||'').localeCompare(a.createdAt||'');});
   const el=document.getElementById('wish-list');
   if(!places.length){
     el.innerHTML=`<div class="empty"><div class="empty-icon">💫</div><div class="empty-title">가고 싶은 곳을 추가해보세요</div><div class="empty-sub">방문예정으로 맛집을 추가하면 여기에 나타납니다.</div></div>`;
@@ -2782,7 +2788,7 @@ function renderWishlist(){
   el.innerHTML=places.map((p,i)=>{
     const cat=C.CATS.find(c=>c.k===p.category);
     return `<div class="wish-item" onclick="openDetail('${p.id}')">
-      <div class="wish-prio">${i+1}</div>
+      <div class="wish-prio">${p.priority||'–'}</div>
       <div class="wish-info">
         <div class="wish-name">${cat?cat.e+' ':''} ${esc(p.name)}</div>
         <div class="wish-meta">${esc(p.category)} · ${esc(p.address||'')}</div>
@@ -2872,6 +2878,14 @@ function renderProfile(){
         <button onclick="saveKakaoJs()" style="background:var(--pr);color:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;white-space:nowrap">저장</button>
       </div>
       <div style="font-size:10px;color:var(--tx3);margin-top:6px">JS 키 변경 후 앱을 새로고침 해주세요</div>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)">
+        <div style="font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:6px">🔐 Firebase 보안 시크릿</div>
+        <div style="display:flex;gap:6px">
+          <input id="fb-secret-input" type="password" value="${esc(DB.g('fb_secret',''))}" placeholder="Database Secret Key" style="flex:1;font-size:12px;padding:7px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--sf2);color:var(--tx1)" autocomplete="off">
+          <button onclick="saveFbSecret()" style="background:var(--pr);color:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;white-space:nowrap">저장</button>
+        </div>
+        <div style="font-size:10px;color:var(--tx3);margin-top:4px">Firebase Console → Project Settings → Service accounts → Database secrets → 시크릿 추가</div>
+      </div>
     </div>`:'';
 
   // Invite codes section
@@ -2948,6 +2962,11 @@ function saveKakaoRest(){
   FB.push();
   toast('카카오 REST API 키가 저장되었습니다 ✅');
 }
+function saveFbSecret(){
+  const v=(document.getElementById('fb-secret-input')||{}).value||'';
+  v.trim()?DB.s('fb_secret',v.trim()):DB.d('fb_secret');
+  toast('Firebase 보안 시크릿 저장 완료 🔐 — Firebase 규칙도 업데이트하세요');
+}
 function saveKakaoJs(){
   const v=(document.getElementById('kk-js')||{}).value||'';
   v.trim()?DB.s('kakao_js_key',v.trim()):DB.d('kakao_js_key');
@@ -2996,11 +3015,18 @@ function openDetail(id){
   document.getElementById('detail-title').textContent=(cat?cat.e+' ':'')+p.name;
 
   const stars=p.rating?starsHTML(p.rating,18):'';
-  const cover=(p.photos&&(p.photos[p.mainPhotoIdx||0]||p.photos[0]))||(p.photoUrls&&p.photoUrls[0]);
+  window._dtPh=[...(p.photos||[]),...(p.photoUrls&&p.photoUrls.filter(u=>u&&!u.startsWith('data:'))||[])];
+  const allPh=window._dtPh;
+  const mainPh=allPh[p.mainPhotoIdx||0]||allPh[0]||'';
 
   let html='';
-  if(cover){
-    html+=`<div style="margin:0 -16px 10px"><img src="${esc(cover)}" style="width:100%;max-height:200px;object-fit:cover" onerror="this.parentElement.remove()"></div>`;
+  if(allPh.length){
+    html+=`<div style="margin:0 -16px 10px">
+      <img src="${esc(mainPh)}" onclick="openLightbox(${p.mainPhotoIdx||0})" style="width:100%;max-height:240px;object-fit:cover;cursor:pointer;display:block" onerror="this.parentElement.style.display='none'">
+      ${allPh.length>1?`<div style="display:flex;gap:4px;padding:6px 8px;background:var(--sf2);overflow-x:auto;scrollbar-width:none">
+        ${allPh.map((ph,i)=>`<img src="${esc(ph)}" onclick="openLightbox(${i})" style="width:54px;height:54px;object-fit:cover;border-radius:8px;flex-shrink:0;cursor:pointer;border:2.5px solid ${i===(p.mainPhotoIdx||0)?'var(--pr)':'transparent'};opacity:${i===(p.mainPhotoIdx||0)?'1':'.7'}" onerror="this.style.display='none'">`).join('')}
+      </div>`:''}
+    </div>`;
   } else {
     html+=`<div style="text-align:center;font-size:56px;padding:16px 0;background:var(--sf2);border-radius:12px;margin-bottom:10px">${cat?cat.e:'🍴'}</div>`;
   }
@@ -3063,6 +3089,44 @@ function openDetail(id){
   openModal('modal-detail');
 }
 
+
+/* ═══════════════════════════════════════════════
+   LIGHTBOX
+═══════════════════════════════════════════════ */
+let _lbIdx=0,_lbTx=0;
+function openLightbox(idx){
+  _lbIdx=idx||0;
+  const photos=window._dtPh||[];
+  if(!photos.length)return;
+  let el=document.getElementById('tj-lb');
+  if(!el){
+    el=document.createElement('div');el.id='tj-lb';
+    el.style.cssText='position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;touch-action:none';
+    el.addEventListener('touchstart',e=>{_lbTx=e.touches[0].clientX;},{passive:true});
+    el.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-_lbTx;if(Math.abs(dx)>40)_lbNav(dx<0?1:-1);},{passive:true});
+    document.body.appendChild(el);
+  }
+  _lbRender();
+}
+function _lbNav(dir){
+  const n=(window._dtPh||[]).length;
+  _lbIdx=(_lbIdx+dir+n)%n;
+  _lbRender();
+}
+function _lbRender(){
+  const photos=window._dtPh||[];
+  if(!photos.length)return;
+  const n=photos.length;
+  const el=document.getElementById('tj-lb');
+  if(!el)return;
+  el.innerHTML=`
+    <img src="${esc(photos[_lbIdx])}" style="max-width:100vw;max-height:100vh;object-fit:contain;display:block">
+    <button onclick="document.getElementById('tj-lb').remove()" style="position:fixed;top:14px;right:14px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:20px;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1">✕</button>
+    ${n>1?`<div style="position:fixed;top:16px;left:50%;transform:translateX(-50%);color:#fff;font-size:13px;background:rgba(0,0,0,.55);padding:3px 14px;border-radius:20px;font-weight:700">${_lbIdx+1} / ${n}</div>`:''}
+    ${n>1?`<button onclick="_lbNav(-1)" style="position:fixed;left:10px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:30px;width:46px;height:46px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>`:''}
+    ${n>1?`<button onclick="_lbNav(1)" style="position:fixed;right:10px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:30px;width:46px;height:46px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>`:''}
+  `;
+}
 function submitComment(pid){
   const input=document.getElementById('cmt-input');
   const text=input.value.trim(); if(!text)return;
