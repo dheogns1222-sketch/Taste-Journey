@@ -727,6 +727,33 @@ nav{
 .avatar-opt.active,.avatar-opt:active{border-color:var(--gold);background:var(--gold-muted);transform:scale(1.12)}
 .avatar-photo{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)}
 
+/* ── RECIPES ── */
+.recipe-hero{margin:12px 12px 2px;border-radius:var(--r);overflow:hidden;position:relative;border:1.5px solid var(--bd);cursor:pointer;box-shadow:0 6px 24px var(--sh)}
+.recipe-hero img{width:100%;height:118px;object-fit:cover;object-position:center 20%;display:block;filter:brightness(.72)}
+.recipe-hero-txt{position:absolute;left:16px;bottom:12px;color:#fff}
+.recipe-hero-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;font-style:italic;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+.recipe-hero-sub{font-size:10px;opacity:.85;letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;font-weight:600}
+.recipe-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px}
+@media(min-width:560px){.recipe-grid{grid-template-columns:repeat(3,1fr)}}
+.recipe-card{position:relative;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--bd);background:var(--sf2);cursor:pointer;transition:all .25s var(--ease)}
+.recipe-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--sh2);border-color:var(--gold)}
+.recipe-card:active{transform:scale(.97)}
+.recipe-card img{width:100%;aspect-ratio:9/14;object-fit:cover;object-position:top;display:block;background:var(--sf3)}
+.recipe-card-name{position:absolute;left:0;right:0;bottom:0;padding:26px 9px 8px;font-size:11.5px;font-weight:700;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.82));line-height:1.35;pointer-events:none}
+.recipe-fav{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;background:rgba(13,10,6,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);font-size:14px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.18);transition:transform .2s var(--spring);cursor:pointer}
+.recipe-fav:active{transform:scale(1.25)}
+#recipe-viewer{position:fixed;inset:0;z-index:1200;background:rgba(8,6,3,.97);display:flex;flex-direction:column;animation:fadeIn .2s}
+.rcv-top{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;flex-shrink:0}
+.rcv-counter{font-size:12px;font-weight:700;color:var(--gold2);letter-spacing:1px}
+.rcv-ctl{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);font-size:15px;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.rcv-stage{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;touch-action:none}
+.rcv-stage img{max-width:100%;max-height:100%;object-fit:contain;transition:transform .25s var(--ease);user-select:none;-webkit-user-drag:none;cursor:zoom-in}
+.rcv-stage img.zoomed{cursor:zoom-out}
+.rcv-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px calc(14px + env(safe-area-inset-bottom));flex-shrink:0}
+.rcv-title{flex:1;text-align:center;font-size:12px;font-weight:700;color:rgba(240,232,216,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rcv-nav{padding:9px 16px;border-radius:20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#F0E8D8;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer}
+.rcv-nav:active{background:rgba(184,136,58,.3)}
+
 </style>
 </head>
 <body>
@@ -872,12 +899,21 @@ nav{
     <div class="view" id="view-profile">
       <div id="profile-content"></div>
     </div>
+
+    <!-- RECIPE VIEW -->
+    <div class="view" id="view-recipe">
+      <div class="view-toolbar">
+        <div class="filter-chips" id="recipe-filter-chips"></div>
+      </div>
+      <div id="recipe-content"></div>
+    </div>
   </main>
   <nav>
     <button class="nav-btn active" id="nav-map" onclick="navTo('map')"><span class="ni">🗺️</span>지도</button>
     <button class="nav-btn" id="nav-list" onclick="navTo('list')"><span class="ni">📋</span>목록</button>
     <button class="nav-btn" id="nav-wish" onclick="navTo('wish')"><span class="ni">🕐</span>방문예정</button>
     <button class="nav-btn" id="nav-stats" onclick="navTo('stats')"><span class="ni">📊</span>통계</button>
+    <button class="nav-btn" id="nav-recipe" onclick="navTo('recipe')"><span class="ni">🍳</span>레시피</button>
     <button class="nav-btn" id="nav-profile" onclick="navTo('profile')"><span class="ni">👤</span>프로필</button>
   </nav>
 </div>
@@ -1077,6 +1113,25 @@ nav{
       <div class="sec-sep"></div>
       <button class="btn-danger" style="text-align:left;padding:14px" onclick="confirmClearData()">🗑️ 모든 데이터 초기화</button>
     </div>
+  </div>
+</div>
+
+<!-- RECIPE VIEWER (전체화면) -->
+<div id="recipe-viewer" class="hidden">
+  <div class="rcv-top">
+    <span class="rcv-counter" id="rcv-counter"></span>
+    <div style="display:flex;gap:8px">
+      <button class="rcv-ctl" id="rcv-fav" onclick="toggleRecipeFavFromViewer()" title="즐겨찾기">🤍</button>
+      <button class="rcv-ctl" onclick="closeRecipeViewer()" title="닫기">✕</button>
+    </div>
+  </div>
+  <div class="rcv-stage" id="rcv-stage">
+    <img id="rcv-img" src="" alt="레시피 카드">
+  </div>
+  <div class="rcv-bottom">
+    <button class="rcv-nav" onclick="recipeStep(-1)">‹ 이전</button>
+    <span class="rcv-title" id="rcv-title"></span>
+    <button class="rcv-nav" onclick="recipeStep(1)">다음 ›</button>
   </div>
 </div>
 
@@ -1282,7 +1337,7 @@ async function setSyncUrl(){
   if(!url.startsWith('http')){toast('올바른 연동 코드 형식이 아닙니다');return;}
   showSyncStatus('🔄 연결 중...');
   try{
-    const r=await fetch(url+'/tj.json?t='+Date.now());
+    const r=await fetch(url+'/tj.json?t='+Date.now()+(FB.secret?'&auth='+FB.secret:''));
     if(!r.ok)throw new Error('unreachable');
     DB.s('fb_url',url);
     const d=await r.json();
@@ -3925,6 +3980,171 @@ function closeModal(id){
 }
 
 /* ═══════════════════════════════════════════════
+   RECIPES — 우리의 레시피 카드북
+═══════════════════════════════════════════════ */
+const RECIPES=[
+  {n:'버터갈릭 쉬림프 로제불닭',c:'파스타',f:'01'},
+  {n:'항정살 갈릭 아라비아타',c:'파스타',f:'02'},
+  {n:'대게살 크림 까르보',c:'파스타',f:'03'},
+  {n:'쉬림프 아라비아타',c:'파스타',f:'04'},
+  {n:'핵불닭 갈릭 파스타',c:'파스타',f:'05'},
+  {n:'베이컨 계란 불닭 까르보',c:'파스타',f:'06'},
+  {n:'핵불닭 마늘오일 파스타',c:'파스타',f:'07'},
+  {n:'항정살 김치찌개',c:'국·찌개',f:'08'},
+  {n:'해물 된장국',c:'국·찌개',f:'09'},
+  {n:'된장 항정살 수프',c:'국·찌개',f:'10'},
+  {n:'갈릭버터 항정살',c:'메인',f:'11'},
+  {n:'직화 항정살 볶음',c:'메인',f:'12'},
+  {n:'고추장 불닭 항정살',c:'메인',f:'13'},
+  {n:'갈릭버터 쉬림프',c:'메인',f:'14'},
+  {n:'고추장 버터 갈릭 새우',c:'메인',f:'15'},
+  {n:'김치 베이컨 계란 볶음',c:'반찬',f:'16'},
+  {n:'직화 김치 볶음',c:'반찬',f:'17'},
+  {n:'대게살 참기름김 스크램블',c:'반찬',f:'18'},
+  {n:'김치 비빔소면',c:'소면',f:'19'},
+  {n:'된장 소면국',c:'소면',f:'20'},
+  {n:'직화 양념 볶음소면',c:'소면',f:'21'},
+  {n:'고추장 버터 갈릭 소면',c:'소면',f:'22'},
+  {n:'해물 마늘버터 소면',c:'소면',f:'23'},
+  {n:'로제불닭 새우 덮밥',c:'비빔·덮밥',f:'24'},
+  {n:'항정살 직화 비빔밥',c:'비빔·덮밥',f:'25'},
+  {n:'핵불닭 된장 항정살 찌개',c:'매운맛',f:'26'},
+  {n:'고추장 핵불닭 직화 항정살',c:'매운맛',f:'27'},
+  {n:'핵불닭 로제 감칠맛 파스타',c:'매운맛',f:'28'},
+  {n:'김치 핵불닭 비빔 소면',c:'매운맛',f:'29'},
+  {n:'핵불닭 해물 된장국',c:'매운맛',f:'30'},
+  {n:'핵불닭 김치 베이컨 계란',c:'매운맛',f:'31'},
+  {n:'핵불닭 마늘 오일 소면',c:'매운맛',f:'32'},
+  {n:'셰프팁 · 공통공식',c:'셰프팁',f:'33'}
+];
+const RECIPE_CAT_META=[
+  {k:'파스타',e:'🍝'},{k:'국·찌개',e:'🍲'},{k:'메인',e:'🥩'},{k:'반찬',e:'🥢'},
+  {k:'소면',e:'🍜'},{k:'비빔·덮밥',e:'🍚'},{k:'매운맛',e:'🌶️'},{k:'셰프팁',e:'👨‍🍳'}
+];
+let recipeFilter='all';
+let _rcvList=[],_rcvIdx=0;
+
+function getRecipeFavs(){return DB.g('recipe_favs',[]);}
+function toggleRecipeFav(f,ev){
+  if(ev)ev.stopPropagation();
+  let favs=getRecipeFavs();
+  favs=favs.includes(f)?favs.filter(x=>x!==f):[...favs,f];
+  DB.s('recipe_favs',favs); // 기기 로컬 저장 (커플 공유 데이터와 분리)
+  if(VIEW==='recipe')renderRecipes();
+  const rv=document.getElementById('recipe-viewer');
+  if(rv&&!rv.classList.contains('hidden'))_rcvSync(false);
+}
+function recipeFiltered(){
+  if(recipeFilter==='fav'){const favs=getRecipeFavs();return RECIPES.filter(r=>favs.includes(r.f));}
+  if(recipeFilter==='all')return RECIPES;
+  return RECIPES.filter(r=>r.c===recipeFilter);
+}
+function setRecipeFilter(f){recipeFilter=f;renderRecipes();}
+function renderRecipes(){
+  const chipsEl=document.getElementById('recipe-filter-chips');
+  if(!chipsEl)return;
+  const favs=getRecipeFavs();
+  chipsEl.innerHTML=
+    `<button class="chip ${recipeFilter==='all'?'active':''}" onclick="setRecipeFilter('all')">전체 ${RECIPES.length}</button>`+
+    `<button class="chip ${recipeFilter==='fav'?'active':''}" onclick="setRecipeFilter('fav')">❤️ 즐겨찾기${favs.length?' '+favs.length:''}</button>`+
+    RECIPE_CAT_META.map(c=>`<button class="chip ${recipeFilter===c.k?'active':''}" onclick="setRecipeFilter('${c.k}')">${c.e} ${c.k}</button>`).join('');
+  const list=recipeFiltered();
+  const el=document.getElementById('recipe-content');
+  const hero=recipeFilter==='all'?`<div class="recipe-hero" onclick="openRecipeCover()"><img src="recipes/t00.jpg" alt="레시피 카드북 표지" loading="lazy"><div class="recipe-hero-txt"><div class="recipe-hero-title">우리의 레시피 카드북</div><div class="recipe-hero-sub">Couple Recipe Collection · ${RECIPES.length} Cards</div></div></div>`:'';
+  if(!list.length){
+    el.innerHTML=hero+`<div class="empty"><div class="empty-icon">${recipeFilter==='fav'?'💛':'🍳'}</div><div class="empty-title">${recipeFilter==='fav'?'즐겨찾기한 레시피가 없어요':'레시피가 없어요'}</div><div class="empty-sub">${recipeFilter==='fav'?'카드의 하트를 눌러 자주 만드는 레시피를 모아보세요':''}</div></div>`;
+    return;
+  }
+  el.innerHTML=hero+`<div class="recipe-grid">`+list.map((r,i)=>{
+    const cm=RECIPE_CAT_META.find(c=>c.k===r.c);
+    return `<div class="recipe-card" onclick="openRecipeViewer(${i})">
+      <img src="recipes/t${r.f}.jpg" alt="${esc(r.n)}" loading="lazy">
+      <button class="recipe-fav" onclick="toggleRecipeFav('${r.f}',event)">${favs.includes(r.f)?'❤️':'🤍'}</button>
+      <div class="recipe-card-name">${cm?cm.e+' ':''}${esc(r.n)}</div>
+    </div>`;
+  }).join('')+`</div>`;
+}
+function openRecipeViewer(i){
+  _rcvList=recipeFiltered();_rcvIdx=i;
+  document.getElementById('recipe-viewer').classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  _rcvSync();
+}
+function openRecipeCover(){
+  _rcvList=[{n:'우리의 레시피 카드북',c:'',f:'00'}];_rcvIdx=0;
+  document.getElementById('recipe-viewer').classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  _rcvSync();
+}
+function _rcvSync(resetImg=true){
+  const r=_rcvList[_rcvIdx];
+  if(!r){closeRecipeViewer();return;}
+  const img=document.getElementById('rcv-img');
+  if(resetImg){
+    img.classList.remove('zoomed');img.style.transform='';
+    img.src='recipes/r'+r.f+'.jpg';
+    // 인접 카드 미리 로드 (스와이프 시 즉시 표시)
+    [_rcvIdx-1,_rcvIdx+1].forEach(j=>{const a=_rcvList[j];if(a){const p=new Image();p.src='recipes/r'+a.f+'.jpg';}});
+  }
+  document.getElementById('rcv-counter').textContent=(_rcvIdx+1)+' / '+_rcvList.length;
+  document.getElementById('rcv-title').textContent=r.n;
+  const favBtn=document.getElementById('rcv-fav');
+  favBtn.textContent=getRecipeFavs().includes(r.f)?'❤️':'🤍';
+  favBtn.style.visibility=r.f==='00'?'hidden':'visible';
+}
+function recipeStep(d){
+  if(_rcvList.length<2)return;
+  _rcvIdx=(_rcvIdx+d+_rcvList.length)%_rcvList.length;
+  _rcvSync();
+}
+function closeRecipeViewer(){
+  document.getElementById('recipe-viewer').classList.add('hidden');
+  document.body.classList.remove('modal-open');
+}
+function toggleRecipeFavFromViewer(){
+  const r=_rcvList[_rcvIdx];
+  if(!r||r.f==='00')return;
+  toggleRecipeFav(r.f);
+}
+// 뷰어 제스처: 좌우 스와이프 넘기기 · 아래 스와이프 닫기 · 탭 확대
+(function(){
+  const stage=document.getElementById('rcv-stage');
+  const img=document.getElementById('rcv-img');
+  if(!stage||!img)return;
+  let sx=0,sy=0,st=0;
+  stage.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1)return;
+    sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=Date.now();
+  },{passive:true});
+  stage.addEventListener('touchend',e=>{
+    if(img.classList.contains('zoomed'))return;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-sx,dy=t.clientY-sy;
+    if(Date.now()-st<600&&Math.abs(dx)>56&&Math.abs(dx)>Math.abs(dy)*1.4)recipeStep(dx<0?1:-1);
+    else if(Math.abs(dx)<10&&dy>96)closeRecipeViewer();
+  },{passive:true});
+  img.addEventListener('click',e=>{
+    const z=img.classList.toggle('zoomed');
+    if(z){
+      const rect=img.getBoundingClientRect();
+      const ox=Math.min(100,Math.max(0,(e.clientX-rect.left)/rect.width*100)).toFixed(1);
+      const oy=Math.min(100,Math.max(0,(e.clientY-rect.top)/rect.height*100)).toFixed(1);
+      img.style.transformOrigin=ox+'% '+oy+'%';
+      img.style.transform='scale(2.1)';
+    }else{
+      img.style.transform='';
+    }
+  });
+  document.addEventListener('keydown',e=>{
+    const rv=document.getElementById('recipe-viewer');
+    if(!rv||rv.classList.contains('hidden'))return;
+    if(e.key==='Escape')closeRecipeViewer();
+    else if(e.key==='ArrowRight')recipeStep(1);
+    else if(e.key==='ArrowLeft')recipeStep(-1);
+  });
+})();
+
+/* ═══════════════════════════════════════════════
    NAV / VIEW
 ═══════════════════════════════════════════════ */
 let VIEW='map';
@@ -3942,6 +4162,7 @@ function renderView(){
   else if(VIEW==='list')renderList();
   else if(VIEW==='wish')renderWishlist();
   else if(VIEW==='stats')renderStats();
+  else if(VIEW==='recipe')renderRecipes();
   if(VIEW==='list')renderListFilterChips();
   if(VIEW==='map')renderMapFilterBar();
   else if(VIEW==='profile')renderProfile();
