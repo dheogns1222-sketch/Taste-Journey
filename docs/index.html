@@ -990,6 +990,14 @@ input:focus,textarea:focus,select:focus{box-shadow:0 0 0 3px var(--gold-muted)}
   display:flex;align-items:center;justify-content:center;cursor:pointer;
 }
 
+/* ── AUTH 데이터 연동 설정 ── */
+.auth-sync-toggle{text-align:center;font-size:11px;letter-spacing:.06em;color:rgba(200,169,106,.65);cursor:pointer;padding:8px 6px 2px;transition:color .2s}
+.auth-sync-toggle:hover{color:var(--gold3)}
+#auth-sync-panel{display:flex;gap:6px;margin-top:8px}
+#auth-sync-panel input{flex:1;font-size:12px;padding:10px 12px}
+#auth-sync-panel button{flex-shrink:0;background:transparent;border:1px solid rgba(200,169,106,.5);color:var(--gold3);border-radius:var(--r-xs);padding:0 14px;font-size:12px;font-weight:700;cursor:pointer}
+#auth-sync-panel button:active{background:rgba(200,169,106,.15)}
+
 </style>
 </head>
 <body>
@@ -1041,6 +1049,11 @@ input:focus,textarea:focus,select:focus{box-shadow:0 0 0 3px var(--gold-muted)}
       <input type="checkbox" id="remember-me" checked style="width:14px;height:14px;accent-color:var(--gold);cursor:pointer">
       로그인 상태 유지
     </label>
+    <div class="auth-sync-toggle" onclick="toggleAuthSync()">⚙ 데이터 연동 설정</div>
+    <div id="auth-sync-panel" style="display:none">
+      <input id="auth-secret-input" type="password" placeholder="Firebase Database Secret" autocomplete="off">
+      <button onclick="saveAuthSecret()">연동</button>
+    </div>
   </div>
 
 
@@ -1906,7 +1919,12 @@ async function handleKakaoAuth(kakaoId,kakaoNickname,kakaoProfileImage){
     else{DB.d('sid');sessionStorage.setItem('tj_sid',ME.id);}
     showProfileSelect();return;
   }
-  // 3. 연동된 계정 없음 → 초대코드로 가입 안내
+  // 3. 연동된 계정 없음
+  if(FB.url&&!FB.secret){
+    // 데이터 초기화된 기기: 서버에서 계정을 못 불러온 상태 → 연동 설정 안내
+    showAuthError('이 기기는 서버 연동이 안 되어 기존 계정을 찾을 수 없습니다. 하단 [⚙ 데이터 연동 설정]에 시크릿을 입력한 뒤 다시 카카오 로그인해주세요.');
+    return;
+  }
   showAuthError('초대 코드로 회원가입 후 카카오 로그인해주세요.');switchTab("signup");
 }
 
@@ -1941,6 +1959,28 @@ function selectProfile(choice){
   DB.s('sid',ME.id);
   FB.push();
   startApp();
+}
+
+function toggleAuthSync(){
+  const p=document.getElementById('auth-sync-panel');
+  const show=p.style.display==='none';
+  p.style.display=show?'flex':'none';
+  if(show){const i=document.getElementById('auth-secret-input');if(i)i.value=DB.g('fb_secret','');}
+}
+async function saveAuthSecret(){
+  const i=document.getElementById('auth-secret-input');
+  const v=(i?i.value:'').trim();
+  if(!v){toast('시크릿을 입력해주세요');return;}
+  DB.s('fb_secret',v);
+  showAuthError('서버 연결 확인 중…');
+  const ok=await FB.pull();
+  if(ok){
+    showAuthError('');
+    toast('연동 완료 — 데이터를 불러왔습니다 ✓');
+    document.getElementById('auth-sync-panel').style.display='none';
+  }else{
+    showAuthError('연결 실패 — 시크릿 값 또는 네트워크를 확인해주세요.');
+  }
 }
 
 function guestLogin(){
@@ -3277,7 +3317,8 @@ function renderProfile(){
       ${isOwner()?`<div class="profile-row"><span class="profile-row-lbl">멤버 관리</span><button style="background:var(--pr);color:#fff;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700" onclick="openUsersModal()">관리</button></div>`:''}
       ${isOwner()?`<div class="profile-row"><span class="profile-row-lbl">데이터 관리</span><button style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--tx2)" onclick="openDataModal()">관리</button></div>`:''}
       <div class="profile-row"><span class="profile-row-lbl">✏️ 닉네임</span><div style="display:flex;gap:6px;align-items:center"><input id="nickname-input" type="text" value="${esc(ME.nickname||ME.username)}" style="width:110px;font-size:13px;padding:5px 8px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx)"><button onclick="saveNickname()" style="background:var(--pr);color:#fff;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700">저장</button></div></div>
-      ${!isStandalone()?`<div class="profile-row"><span class="profile-row-lbl">앱으로 설치</span><button style="background:var(--gold);color:#0D0A06;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700" onclick="installApp()">홈 화면에 추가</button></div>`:''}
+      <div class="profile-row"><span class="profile-row-lbl">앱으로 설치</span><button style="background:var(--gold);color:#0D0A06;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700" onclick="installApp()">${isStandalone()?'설치됨 ✓':'홈 화면에 추가'}</button></div>
+      <div class="profile-row"><span class="profile-row-lbl">앱 버전</span><button style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--tx2)" onclick="manualUpdateCheck()">v${APP_VER} · 업데이트 확인</button></div>
       <div class="profile-row"><span class="profile-row-lbl">🚪 로그아웃</span><button style="background:#ffebee;border:1px solid #ffcdd2;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--pv)" onclick="logout()">로그아웃</button></div>
       ${!ME.kakaoId?`<div class="profile-row"><span class="profile-row-lbl">카카오 연동</span><button style="background:#FEE500;color:#000;border-radius:8px;padding:5px 14px;font-size:12px;font-weight:700;border:none;cursor:pointer" onclick="linkKakaoAccount()">카카오 연동하기</button></div>`:''}
     </div>
@@ -4695,7 +4736,7 @@ function updateHeader(){
 /* ═══════════════════════════════════════════════
    APP UPDATE — 버전 체크 & 상단 배너
 ═══════════════════════════════════════════════ */
-const APP_VER='2.0.0'; // 배포 시 version.json과 함께 올린다
+const APP_VER='2.0.1'; // 배포 시 version.json과 함께 올린다
 let _updDismissed=false;
 let _updTimer=null;
 
@@ -4719,6 +4760,13 @@ function showUpdateBanner(v){
   document.getElementById('upd-sub').textContent=
     'v'+v.ver+(v.note?' · '+v.note:'')+' — 탭하여 지금 갱신';
   b.classList.remove('hidden');
+}
+async function manualUpdateCheck(){
+  _updDismissed=false; // 수동 확인 시 세션 숨김 해제
+  toast('업데이트 확인 중…');
+  await checkAppUpdate();
+  const b=document.getElementById('update-banner');
+  if(!b||b.classList.contains('hidden'))toast('최신 버전입니다 ✓ v'+APP_VER);
 }
 function dismissUpdateBanner(){
   _updDismissed=true; // 이번 세션만 숨김 — 다음 실행 시 다시 안내
