@@ -1,4 +1,4 @@
-const CACHE='tj-v4';
+const CACHE='tj-v5';
 self.addEventListener('install',e=>e.waitUntil(self.skipWaiting()));
 self.addEventListener('activate',e=>e.waitUntil(
   caches.keys()

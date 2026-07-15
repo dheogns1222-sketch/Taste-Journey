@@ -19,7 +19,7 @@
 <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
 <style>
 /* ── LUXURY TASTE JOURNEY DESIGN SYSTEM 2026 ── */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500;1,600&family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
 :root{
   /* Core palette — light */
@@ -727,21 +727,7 @@ nav{
 .avatar-opt.active,.avatar-opt:active{border-color:var(--gold);background:var(--gold-muted);transform:scale(1.12)}
 .avatar-photo{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)}
 
-/* ── RECIPES ── */
-.recipe-hero{margin:12px 12px 2px;border-radius:var(--r);overflow:hidden;position:relative;border:1.5px solid var(--bd);cursor:pointer;box-shadow:0 6px 24px var(--sh)}
-.recipe-hero img{width:100%;height:118px;object-fit:cover;object-position:center 20%;display:block;filter:brightness(.72)}
-.recipe-hero-txt{position:absolute;left:16px;bottom:12px;color:#fff}
-.recipe-hero-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;font-style:italic;text-shadow:0 2px 12px rgba(0,0,0,.6)}
-.recipe-hero-sub{font-size:10px;opacity:.85;letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;font-weight:600}
-.recipe-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px}
-@media(min-width:560px){.recipe-grid{grid-template-columns:repeat(3,1fr)}}
-.recipe-card{position:relative;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--bd);background:var(--sf2);cursor:pointer;transition:all .25s var(--ease)}
-.recipe-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--sh2);border-color:var(--gold)}
-.recipe-card:active{transform:scale(.97)}
-.recipe-card img{width:100%;aspect-ratio:9/14;object-fit:cover;object-position:top;display:block;background:var(--sf3)}
-.recipe-card-name{position:absolute;left:0;right:0;bottom:0;padding:26px 9px 8px;font-size:11.5px;font-weight:700;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.82));line-height:1.35;pointer-events:none}
-.recipe-fav{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;background:rgba(13,10,6,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);font-size:14px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.18);transition:transform .2s var(--spring);cursor:pointer}
-.recipe-fav:active{transform:scale(1.25)}
+/* ── (구 레시피 그리드 CSS 제거됨 — 아래 MAISON 레시피 북 참조) ── */
 #recipe-viewer{position:fixed;inset:0;z-index:1200;background:rgba(8,6,3,.97);display:flex;flex-direction:column;animation:fadeIn .2s}
 .rcv-top{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;flex-shrink:0}
 .rcv-counter{font-size:12px;font-weight:700;color:var(--gold2);letter-spacing:1px}
@@ -754,15 +740,233 @@ nav{
 .rcv-nav{padding:9px 16px;border-radius:20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#F0E8D8;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer}
 .rcv-nav:active{background:rgba(184,136,58,.3)}
 
+
+/* ═══════════════════════════════════════════════
+   MAISON EDITION 2026 — 디자인 시스템 오버라이드
+   파인다이닝 메뉴북 미학: 세리프 헤딩 · 헤어라인 · 그레인
+═══════════════════════════════════════════════ */
+:root{
+  --font-display:'Cormorant Garamond','Noto Serif KR',serif;
+  --font-body:'Noto Sans KR','DM Sans',system-ui,sans-serif;
+  --bg:#F6F1E7;--sf:#FCFAF4;--sf2:#F0E9DA;--sf3:#E7DECA;
+  --gold:#A67C2E;--gold2:#C29A4B;--gold3:#E3C57E;--gold-muted:rgba(166,124,46,.11);
+  --pr:#A67C2E;--pr2:#C29A4B;--ac:#A67C2E;--accent:#A67C2E;--sub:#8A7358;
+  --tx:#241a0c;--tx2:#4E3C24;--tx3:#8A7358;--tx4:#B5A488;
+  --bd:#DED2BA;--bd2:#CBBC9E;
+  --sh:rgba(34,23,8,.06);--sh2:rgba(34,23,8,.14);
+  --r:14px;--r-sm:9px;--r-xs:7px;
+  --hh:60px;--nh:64px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#0B0805;--sf:#141009;--sf2:#1C1610;--sf3:#251D12;
+  --gold:#C8A96A;--gold2:#E0C489;--gold3:#F2DFAC;--gold-muted:rgba(200,169,106,.12);
+  --pr:#C8A96A;--pr2:#E0C489;--ac:#C8A96A;--accent:#C8A96A;--sub:#8E7A5E;
+  --tx:#EFE6D3;--tx2:#C9B893;--tx3:#8E7A5E;--tx4:#5C4E38;
+  --bd:#2A2114;--bd2:#3C301D;
+  --sh:rgba(0,0,0,.4);--sh2:rgba(0,0,0,.7);
+}}
+html,body{font-family:var(--font-body);font-size:15.5px;letter-spacing:-.01em}
+button,input,textarea,select{font-family:var(--font-body)}
+/* 그레인 텍스처 — 전 화면 은은한 필름 질감 */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:3000;opacity:.045;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>")}
+
+/* ── 타이포그래피 위계: 세리프 디스플레이 ── */
+.h-logo,.auth-title,.modal-title,.sec-title,.empty-title,.profile-name,
+.stat-num,.p-stat-num,.recipe-hero-title{font-family:var(--font-display)}
+.h-logo{font-size:20px;font-weight:600;font-style:normal;letter-spacing:.01em;display:flex;align-items:center;gap:8px}
+.h-logo em{font-style:italic;font-weight:600}
+.h-crest{width:21px;height:21px;color:var(--gold);flex-shrink:0}
+.modal-title{font-size:20px;font-weight:600;font-style:italic}
+.sec-title{font-size:16.5px;font-weight:600;font-style:italic;letter-spacing:.01em}
+.stat-num{background:none;-webkit-text-fill-color:currentColor;color:var(--gold);font-weight:600;font-size:42px;font-style:italic}
+.p-stat-num{font-weight:600;font-style:italic;font-size:26px}
+.empty-title{font-size:18px}
+
+/* ── 헤더: 하단 골드 헤어라인 정제 ── */
+header{height:var(--hh);border-bottom:1px solid var(--bd)}
+header::after{height:1px;background:linear-gradient(90deg,transparent 4%,var(--gold2) 50%,transparent 96%);opacity:.55}
+.h-couple{font-size:10.5px;letter-spacing:.06em;margin-top:0}
+.h-btn{width:37px;height:37px;background:transparent;border:1px solid var(--bd);color:var(--tx3)}
+.h-btn svg{width:17px;height:17px}
+.h-btn:hover{background:var(--gold-muted);border-color:var(--gold2);color:var(--gold)}
+
+/* ── 하단 네비: SVG 아이콘 + 정제된 인디케이터 ── */
+nav{height:var(--nh);border-top:1px solid var(--bd)}
+nav::before{content:'';position:absolute;top:-1px;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold2),transparent);opacity:.35}
+.nav-btn{font-size:10px;font-weight:500;letter-spacing:.04em;text-transform:none;gap:4px;color:var(--tx3)}
+.nav-btn::before{left:calc(50% - 11px);right:auto;width:22px;height:2px;border-radius:0 0 2px 2px}
+.nav-btn .ni{width:21px;height:21px;font-size:0;display:flex;align-items:center;justify-content:center}
+.nav-btn .ni svg{width:21px;height:21px}
+.nav-btn.active{color:var(--gold);font-weight:700}
+.nav-btn.active .ni{transform:translateY(-1px)}
+
+/* ── 서피스: 헤어라인 보더 · 절제된 그림자 ── */
+.card,.wish-item,.stat-card,.p-stat,.profile-card,.comment,.detail-memo,.addr-panel{border-width:1px}
+.card{border-radius:var(--r)}
+.card:hover{box-shadow:0 6px 22px var(--sh2);transform:none;border-color:var(--bd2)}
+.card-stripe{width:3px}
+.card-icon{border-radius:var(--r-xs)}
+.card-name{font-family:var(--font-body);font-weight:700;letter-spacing:-.01em}
+.stat-card{border-radius:var(--r);padding:20px 16px}
+.stat-card::before{display:none}
+.stat-lbl,.p-stat-lbl{letter-spacing:.14em;font-size:10px}
+.bar-fill{background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.wish-prio{background:transparent;border:1px solid var(--gold2);color:var(--gold);font-family:var(--font-display);font-size:14px;font-weight:600;font-style:italic}
+
+/* ── 칩·버튼: 과한 글로우 제거 ── */
+.chip{border-width:1px;font-weight:500;letter-spacing:.01em;padding:6px 13px}
+.chip.active{box-shadow:none;font-weight:700}
+.type-btn,.cat-btn,.rv-btn,.auth-method-btn{border-width:1px}
+.type-btn.active{box-shadow:none}
+.btn-primary{box-shadow:none;background:linear-gradient(135deg,var(--gold) 0%,var(--gold2) 100%);letter-spacing:.02em}
+.btn-primary:hover{transform:none;box-shadow:0 4px 14px rgba(166,124,46,.3)}
+.btn-sec,.btn-danger{border-width:1px}
+.auth-btn{box-shadow:none}
+.icon-btn,.sort-btn{border-width:1px;background:transparent}
+.map-ctrl-btn{border-width:1px;box-shadow:0 2px 10px var(--sh)}
+.map-ctrl-btn svg{width:17px;height:17px}
+.pp-btn{box-shadow:none}
+.tag{letter-spacing:.02em}
+
+/* ── 모달: 인쇄물 감성 ── */
+.modal{border-radius:22px 22px 0 0;border-width:1px}
+.overlay.center .modal{border-radius:18px}
+.modal-handle-bar{width:32px;height:3px;opacity:.7}
+.modal-head{border-bottom:1px solid var(--bd)}
+.close-btn{background:transparent;border:1px solid var(--bd)}
+.form-lbl{letter-spacing:.16em;font-size:10px;color:var(--tx3)}
+input,textarea,select{border-width:1px;border-radius:var(--r-xs);font-size:14px}
+input:focus,textarea:focus,select:focus{box-shadow:0 0 0 3px var(--gold-muted)}
+.modal-foot{border-top:1px solid var(--bd)}
+
+/* ── 토스트 ── */
+#toast{border-radius:8px;font-weight:500;letter-spacing:.02em;padding:11px 22px;box-shadow:0 10px 30px rgba(0,0,0,.28)}
+
+/* ── 프로필 히어로 ── */
+.profile-hero{border-radius:0 0 24px 24px;background:linear-gradient(168deg,#0B0805 0%,#1A130A 55%,#241A0C 100%)}
+.profile-hero::before{background:radial-gradient(ellipse 62% 48% at 50% 100%,rgba(200,169,106,.14) 0%,transparent 70%)}
+.profile-name{font-weight:600}
+.role-badge{letter-spacing:.18em;font-size:10.5px;border-radius:3px;padding:5px 14px}
+.role-chip{letter-spacing:.1em;border-radius:4px}
+
+/* ── AUTH 화면: 에디토리얼 재구성 ── */
+#auth{background:linear-gradient(170deg,#0B0805 0%,#171008 45%,#241808 100%)}
+#auth::before{background:radial-gradient(ellipse 75% 46% at 50% -4%,rgba(200,169,106,.13) 0%,transparent 68%)}
+.auth-crest{width:58px;height:58px;color:var(--gold2);margin-bottom:18px;filter:drop-shadow(0 6px 18px rgba(200,169,106,.35));animation:heroFloat 5s ease-in-out infinite}
+.auth-crest svg{width:100%;height:100%}
+.auth-title{font-size:40px;font-weight:600;font-style:italic;letter-spacing:.01em;text-shadow:none;margin-bottom:6px}
+.auth-title span{color:var(--gold2)}
+.auth-sub{font-size:11px;letter-spacing:.42em;text-indent:.42em;color:rgba(240,232,216,.42);margin-bottom:10px;text-transform:none}
+.auth-rule{display:flex;align-items:center;gap:12px;margin-bottom:30px;width:210px}
+.auth-rule span{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(200,169,106,.55))}
+.auth-rule span:last-child{background:linear-gradient(90deg,rgba(200,169,106,.55),transparent)}
+.auth-rule em{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11px;letter-spacing:.28em;text-indent:.28em;color:rgba(200,169,106,.75);white-space:nowrap}
+.auth-box{background:rgba(252,250,244,.03);border:1px solid rgba(200,169,106,.22);border-radius:18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 30px 70px rgba(0,0,0,.5);position:relative}
+.auth-box::before{content:'';position:absolute;inset:5px;border:1px solid rgba(200,169,106,.1);border-radius:14px;pointer-events:none}
+.auth-tabs{border:1px solid rgba(200,169,106,.25);border-radius:var(--r-xs)}
+.auth-tab{letter-spacing:.14em;font-size:12px;font-weight:600;color:rgba(240,232,216,.45)}
+.auth-tab.active{background:var(--gold);color:#0B0805}
+.auth-pw-btn{background:transparent;border:1px solid rgba(200,169,106,.5);color:var(--gold3);letter-spacing:.1em}
+.auth-pw-btn:hover{background:rgba(200,169,106,.12);filter:none}
+.auth-btn{letter-spacing:.06em}
+#auth input,#auth textarea{background:rgba(252,250,244,.05);border:1px solid rgba(200,169,106,.18);border-radius:var(--r-xs)}
+#auth input:focus{border-color:rgba(200,169,106,.6);background:rgba(252,250,244,.08);box-shadow:0 0 0 3px rgba(200,169,106,.12)}
+.auth-or{letter-spacing:.3em;text-indent:.3em;font-size:10px}
+.auth-note{border-radius:var(--r-xs);border:1px solid rgba(200,169,106,.22);background:rgba(200,169,106,.06)}
+.kakao-btn{border-radius:var(--r-xs);font-weight:700}
+.kakao-btn:hover{transform:none;box-shadow:0 4px 16px rgba(254,229,0,.25)}
+
+/* ── 레시피(기존 그리드 스타일 정제 — 2단계에서 네이티브 카드로 대체) ── */
+.recipe-hero{border-width:1px}
+.recipe-card{border-width:1px}
+.recipe-card:hover{transform:none;box-shadow:0 6px 22px var(--sh2)}
+
+/* ── 지도 검색바 ── */
+.map-search-bar input{border-width:1px;box-shadow:0 3px 14px var(--sh2)}
+.map-drop,#pin-popup{border-width:1px}
+
+/* ── 뷰 전환 모션 절제 ── */
+.view{animation:viewIn .26s var(--ease)}
+/* ── MAISON 레시피 북 ── */
+.rcp-head{padding:20px 16px 4px;text-align:center}
+.rcp-head-eyebrow{font-size:9.5px;letter-spacing:.4em;text-indent:.4em;color:var(--gold);font-weight:700;margin-bottom:7px}
+.rcp-head-title{font-family:var(--font-display);font-style:italic;font-weight:600;font-size:25px;color:var(--tx);line-height:1.2}
+.rcp-head-rule{display:flex;align-items:center;gap:10px;justify-content:center;margin:10px auto 0;width:190px}
+.rcp-head-rule span{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--bd2))}
+.rcp-head-rule span:last-child{background:linear-gradient(90deg,var(--bd2),transparent)}
+.rcp-head-rule em{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:10.5px;letter-spacing:.2em;text-indent:.2em;color:var(--tx3);white-space:nowrap}
+.rcp-head-sub{font-size:11.5px;color:var(--tx3);margin-top:8px}
+.rcp-head-sub b{color:var(--gold);font-weight:600;cursor:pointer;border-bottom:1px solid rgba(166,124,46,.35);padding-bottom:1px}
+.rcp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:14px 12px}
+@media(min-width:560px){.rcp-grid{grid-template-columns:repeat(3,1fr)}}
+.rcp-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:all .22s var(--ease);position:relative}
+.rcp-card:active{transform:scale(.98)}
+.rcp-card:hover{border-color:var(--gold2);box-shadow:0 6px 20px var(--sh2)}
+.rcp-vis{height:84px;position:relative;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--bd)}
+.rcp-vis-emoji{font-size:33px;filter:drop-shadow(0 4px 9px rgba(0,0,0,.16))}
+.rcp-badge{position:absolute;top:7px;left:7px;font-size:8.5px;font-weight:700;letter-spacing:.13em;padding:3px 7px;background:rgba(11,8,5,.55);color:var(--gold3);border:1px solid rgba(200,169,106,.35);border-radius:3px;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.rcp-fav{position:absolute;top:5px;right:5px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;background:rgba(11,8,5,.35);border:1px solid rgba(255,255,255,.16);color:#fff;cursor:pointer;transition:transform .2s var(--spring)}
+.rcp-fav.on{color:#F0796B}
+.rcp-fav:active{transform:scale(1.22)}
+.rcp-body{padding:10px 11px 12px}
+.rcp-name{font-size:13px;font-weight:700;line-height:1.4;color:var(--tx);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:36px}
+.rcp-meta{margin-top:5px;font-size:10.5px;color:var(--tx3);display:flex;align-items:center;gap:5px;flex-wrap:wrap;line-height:1.4}
+.rcp-meta .st{color:var(--gold);letter-spacing:1px}
+/* 상세 */
+.rcpd-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:15px 0 2px}
+.rcpd-chip{font-size:10.5px;font-weight:600;letter-spacing:.08em;padding:4px 10px;border:1px solid var(--bd);border-radius:3px;color:var(--tx2)}
+.rcpd-chip.gold{border-color:rgba(166,124,46,.45);color:var(--gold)}
+.rcpd-stars{font-size:13px;color:var(--gold);letter-spacing:2px;margin-left:auto}
+.rcpd-desc{font-family:var(--font-display);font-style:italic;font-size:15px;color:var(--tx2);padding:8px 0 0;line-height:1.6}
+.rcpd-sec{margin-top:20px}
+.rcpd-sec-t{display:flex;align-items:center;gap:10px;font-size:10px;font-weight:700;letter-spacing:.24em;color:var(--gold)}
+.rcpd-sec-t::after{content:'';flex:1;height:1px;background:var(--bd)}
+.rcpd-sec-b{margin-top:11px}
+.rcpd-prow{display:flex;align-items:center;justify-content:space-between;padding:4px 0}
+.rcpd-plbl{font-size:12.5px;color:var(--tx2);font-weight:500}
+.rcpd-dots{display:flex;gap:5px}
+.rcpd-dot{width:8px;height:8px;border-radius:50%;border:1px solid var(--bd2)}
+.rcpd-dot.on{background:var(--gold);border-color:var(--gold)}
+.rcpd-serv{display:flex;border:1px solid var(--bd);border-radius:5px;overflow:hidden;margin-left:auto}
+.rcpd-serv button{padding:4px 13px;font-size:11px;font-weight:700;color:var(--tx3);background:transparent;letter-spacing:.04em}
+.rcpd-serv button.on{background:var(--gold);color:#14100A}
+.rcpd-ing{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:8px 2px;border-bottom:1px dashed var(--bd);font-size:13px}
+.rcpd-ing:last-child{border-bottom:none}
+.rcpd-ing .n{color:var(--tx2)}
+.rcpd-ing .q{color:var(--tx);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rcpd-step{display:flex;gap:11px;margin-bottom:13px}
+.rcpd-step:last-child{margin-bottom:0}
+.rcpd-step-no{width:22px;height:22px;border-radius:50%;border:1px solid var(--gold2);color:var(--gold);font-family:var(--font-display);font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.rcpd-step-tx{font-size:13.5px;line-height:1.68;color:var(--tx2)}
+.rcpd-tips{border:1px solid rgba(166,124,46,.32);border-radius:var(--r-sm);padding:14px 16px;background:var(--gold-muted);display:flex;flex-direction:column;gap:7px}
+.rcpd-tip{font-size:12.5px;line-height:1.7;color:var(--tx2);padding-left:15px;position:relative}
+.rcpd-tip::before{content:'◆';position:absolute;left:0;top:1px;font-size:7.5px;color:var(--gold)}
+.rcpd-actions{display:flex;gap:8px;margin-top:22px}
+.rcpd-by{font-size:11px;color:var(--tx3);text-align:center;margin-top:16px;font-style:italic}
+/* 등록 폼 */
+.rcpf-row{display:flex;gap:6px;margin-bottom:8px;align-items:center}
+.rcpf-row input{flex:1}
+.rcpf-row input.q{flex:0 0 74px}
+.rcpf-row textarea{flex:1;resize:none}
+.rcpf-no{width:20px;flex-shrink:0;text-align:center;font-family:var(--font-display);font-style:italic;font-size:13px;color:var(--gold)}
+.rcpf-del{width:32px;height:32px;flex-shrink:0;border:1px solid var(--bd);border-radius:var(--r-xs);color:var(--tx3);font-size:12px;display:flex;align-items:center;justify-content:center;background:transparent}
+.rcpf-del:hover{border-color:var(--pv);color:var(--pv)}
+.rcpf-add{width:100%;padding:10px;border:1px dashed var(--bd2);border-radius:var(--r-xs);color:var(--tx3);font-size:12.5px;font-weight:600;margin-top:2px;background:transparent}
+.rcpf-add:hover{border-color:var(--gold);color:var(--gold)}
+.rcpf-dots{display:flex;gap:8px;padding:4px 0;align-items:center}
+.rcpf-dot{width:28px;height:28px;border-radius:50%;border:1px solid var(--bd2);color:var(--tx3);font-size:11.5px;display:flex;align-items:center;justify-content:center;background:transparent;font-weight:600}
+.rcpf-dot.on{background:var(--gold);border-color:var(--gold);color:#14100A;font-weight:700}
+
 </style>
 </head>
 <body>
 
 <!-- AUTH -->
 <div id="auth">
-  <div class="auth-logo">🍽️</div>
+  <div class="auth-crest"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"><circle cx="24" cy="24" r="21.5"/><circle cx="24" cy="24" r="18.2" stroke-opacity=".38"/><path d="M18.4 14.5v5.2a2.6 2.6 0 0 0 5.2 0v-5.2M21 14.5V33.5M28.9 14.5c-1.5 1.4-2.4 3.6-2.4 5.8 0 2 .9 3.2 2.4 3.2V33.5"/></svg></div>
   <div class="auth-title">Taste <span>Journey</span></div>
-  <div class="auth-sub">커플 맛집 투어 기록</div>
+  <div class="auth-sub">두 사람의 미식 여정</div>
+  <div class="auth-rule"><span></span><em>MAISON · EST. 2026</em><span></span></div>
   <div class="auth-box">
     <div class="auth-tabs">
       <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">로그인</button>
@@ -836,23 +1040,23 @@ nav{
 <div id="app" class="hidden">
   <header>
     <div class="h-logo-wrap">
-      <div class="h-logo">🍽️ Taste <em>Journey</em></div>
+      <div class="h-logo"><svg class="h-crest" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="24" cy="24" r="21"/><path d="M18.4 14.5v5.2a2.6 2.6 0 0 0 5.2 0v-5.2M21 14.5V33.5M28.9 14.5c-1.5 1.4-2.4 3.6-2.4 5.8 0 2 .9 3.2 2.4 3.2V33.5"/></svg>Taste <em>Journey</em></div>
       <div class="h-couple" id="h-couple"></div>
     </div>
-    <button class="h-btn" onclick="openDataModal()" title="데이터">💾</button>
+    <button class="h-btn" onclick="openDataModal()" title="데이터"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="5" rx="1.2"/><path d="M5 9v9a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 18V9M10 13h4"/></svg></button>
     <button class="h-btn" onclick="openProfileModal()" title="프로필" id="h-profile-btn">👤</button>
   </header>
   <main>
     <!-- MAP VIEW -->
     <div class="view active" id="view-map">
       <div class="map-search-bar">
-        <input type="text" id="map-search" placeholder="🔍 지도에서 장소 검색..." oninput="onMapSearch()" autocomplete="off">
+        <input type="text" id="map-search" placeholder="지도에서 장소 검색" oninput="onMapSearch()" autocomplete="off">
         <div class="map-drop hidden" id="map-drop"></div>
       </div>
       <div class="map-ctrl">
         <button class="map-ctrl-btn" onclick="MAP.zoomIn()">＋</button>
         <button class="map-ctrl-btn" onclick="MAP.zoomOut()">－</button>
-        <button class="map-ctrl-btn" onclick="MAP.geoLocate()" title="내 위치">📍</button>
+        <button class="map-ctrl-btn" onclick="MAP.geoLocate()" title="내 위치"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5V6M12 18v3.5M2.5 12H6M18 12h3.5"/></svg></button>
       </div>
       <canvas id="map-canvas"></canvas>
       <div id="kakao-map"></div>
@@ -873,8 +1077,8 @@ nav{
       </div>
       <div class="view-toolbar" style="padding-top:0;border-bottom:1px solid var(--bd)">
         <div class="search-wrap" style="flex:1">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="list-search" placeholder="이름, 카테고리, 주소 검색..." oninput="renderList()">
+          <span class="search-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg></span>
+          <input type="text" id="list-search" placeholder="이름, 카테고리, 주소 검색" oninput="renderList()">
         </div>
         <button class="sort-btn write-only" onclick="openAddModal(null,false)" style="background:var(--pr);color:#fff;border-color:var(--pr)">＋</button>
       </div>
@@ -884,7 +1088,7 @@ nav{
     <!-- WISHLIST VIEW -->
     <div class="view" id="view-wish">
       <div class="view-toolbar">
-        <span style="font-size:15px;font-weight:800;color:var(--pr);flex:1">🕐 방문예정 목록</span>
+        <span style="font-size:15px;font-weight:800;color:var(--pr);flex:1">방문예정 목록</span>
         <button class="write-only" onclick="openAddModal(null,true)" style="background:var(--pr);color:#fff;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700">＋ 추가</button>
       </div>
       <div id="wish-list" style="padding-top:8px"></div>
@@ -905,16 +1109,23 @@ nav{
       <div class="view-toolbar">
         <div class="filter-chips" id="recipe-filter-chips"></div>
       </div>
+      <div class="view-toolbar" style="padding-top:0">
+        <div class="search-wrap" style="flex:1">
+          <span class="search-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg></span>
+          <input type="text" id="recipe-search" placeholder="레시피 이름, 재료 검색" oninput="renderRecipes()">
+        </div>
+        <button class="sort-btn write-only" onclick="openRecipeForm()" title="레시피 등록" style="background:var(--pr);color:#fff;border-color:var(--pr)">＋</button>
+      </div>
       <div id="recipe-content"></div>
     </div>
   </main>
   <nav>
-    <button class="nav-btn active" id="nav-map" onclick="navTo('map')"><span class="ni">🗺️</span>지도</button>
-    <button class="nav-btn" id="nav-list" onclick="navTo('list')"><span class="ni">📋</span>목록</button>
-    <button class="nav-btn" id="nav-wish" onclick="navTo('wish')"><span class="ni">🕐</span>방문예정</button>
-    <button class="nav-btn" id="nav-stats" onclick="navTo('stats')"><span class="ni">📊</span>통계</button>
-    <button class="nav-btn" id="nav-recipe" onclick="navTo('recipe')"><span class="ni">🍳</span>레시피</button>
-    <button class="nav-btn" id="nav-profile" onclick="navTo('profile')"><span class="ni">👤</span>프로필</button>
+    <button class="nav-btn active" id="nav-map" onclick="navTo('map')"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.2s-6.4-5.6-6.4-10.4a6.4 6.4 0 1 1 12.8 0c0 4.8-6.4 10.4-6.4 10.4Z"/><circle cx="12" cy="10.6" r="2.3"/></svg></span>지도</button>
+    <button class="nav-btn" id="nav-list" onclick="navTo('list')"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8.5 6h11.5M8.5 12h11.5M8.5 18h11.5"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="2.4"/></svg></span>목록</button>
+    <button class="nav-btn" id="nav-wish" onclick="navTo('wish')"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3.1 1.9"/></svg></span>방문예정</button>
+    <button class="nav-btn" id="nav-stats" onclick="navTo('stats')"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 20V12.5M12 20V5.5M19 20v-10M3 20.5h18"/></svg></span>통계</button>
+    <button class="nav-btn" id="nav-recipe" onclick="navTo('recipe')"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.6C10.2 4.2 7.9 3.6 4.5 3.6v15.2c3.4 0 5.7.6 7.5 2 1.8-1.4 4.1-2 7.5-2V3.6c-3.4 0-5.7.6-7.5 2Z"/><path d="M12 5.6v15.2"/></svg></span>레시피</button>
+    <button class="nav-btn" id="nav-profile" onclick="navTo('profile')"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="8.2" r="3.7"/><path d="M4.8 20c1.3-3.7 4-5.5 7.2-5.5s5.9 1.8 7.2 5.5"/></svg></span>프로필</button>
   </nav>
 </div>
 
@@ -931,8 +1142,8 @@ nav{
       <div class="form-sec">
         <span class="form-lbl">기록 유형</span>
         <div class="type-row">
-          <button class="type-btn active" id="type-visited" onclick="setFormType('visited')">✅ 방문완료</button>
-          <button class="type-btn" id="type-wish" onclick="setFormType('wish')">🕐 방문예정</button>
+          <button class="type-btn active" id="type-visited" onclick="setFormType('visited')">방문완료</button>
+          <button class="type-btn" id="type-wish" onclick="setFormType('wish')">방문예정</button>
         </div>
       </div>
       <!-- 2. 카테고리 -->
@@ -1021,7 +1232,7 @@ nav{
   <div class="modal" style="max-height:85svh;max-height:85vh">
     <div class="modal-handle"><div class="modal-handle-bar"></div></div>
     <div class="modal-head">
-      <span class="modal-title">🔗 맛집 카드 공유</span>
+      <span class="modal-title">맛집 카드 공유</span>
       <button class="close-btn" onclick="closeShareSheet()">✕</button>
     </div>
     <div class="modal-body" id="share-body" style="padding:14px 16px 24px"></div>
@@ -1071,7 +1282,7 @@ nav{
   <div class="modal">
     <div class="modal-handle"><div class="modal-handle-bar"></div></div>
     <div class="modal-head">
-      <span class="modal-title">👥 멤버 관리</span>
+      <span class="modal-title">멤버 관리</span>
       <button class="close-btn" onclick="closeModal('modal-users')">✕</button>
     </div>
     <div class="modal-body" id="users-body" style="padding:12px 16px"></div>
@@ -1084,7 +1295,7 @@ nav{
   <div class="modal">
     <div class="modal-handle"><div class="modal-handle-bar"></div></div>
     <div class="modal-head">
-      <span class="modal-title">🖼️ 프로필 아이콘 선택</span>
+      <span class="modal-title">프로필 아이콘 선택</span>
       <button class="close-btn" onclick="closeModal('modal-avatar')">✕</button>
     </div>
     <div class="modal-body" style="padding:16px 16px 28px">
@@ -1102,7 +1313,7 @@ nav{
   <div class="modal">
     <div class="modal-handle"><div class="modal-handle-bar"></div></div>
     <div class="modal-head">
-      <span class="modal-title">💾 데이터 관리</span>
+      <span class="modal-title">데이터 관리</span>
       <button class="close-btn" onclick="closeModal('modal-data')">✕</button>
     </div>
     <div class="modal-body" style="padding:16px;display:flex;flex-direction:column;gap:10px">
@@ -1112,6 +1323,34 @@ nav{
       <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)">
       <div class="sec-sep"></div>
       <button class="btn-danger" style="text-align:left;padding:14px" onclick="confirmClearData()">🗑️ 모든 데이터 초기화</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: RECIPE DETAIL -->
+<div class="overlay hidden" id="modal-recipe">
+  <div class="modal">
+    <div class="modal-handle"><div class="modal-handle-bar"></div></div>
+    <div class="modal-head">
+      <span class="modal-title" id="rcp-detail-title"></span>
+      <button class="close-btn" onclick="closeModal('modal-recipe')">✕</button>
+    </div>
+    <div class="modal-body" id="rcp-detail-body" style="padding:0 18px 26px"></div>
+  </div>
+</div>
+
+<!-- MODAL: RECIPE FORM -->
+<div class="overlay hidden" id="modal-recipe-form">
+  <div class="modal">
+    <div class="modal-handle"><div class="modal-handle-bar"></div></div>
+    <div class="modal-head">
+      <span class="modal-title" id="rcp-form-title">레시피 등록</span>
+      <button class="close-btn" onclick="closeModal('modal-recipe-form')">✕</button>
+    </div>
+    <div class="modal-body" id="rcp-form-body" style="padding-bottom:10px"></div>
+    <div class="modal-foot">
+      <button class="btn-sec" onclick="closeModal('modal-recipe-form')">취소</button>
+      <button class="btn-primary" onclick="saveRecipeForm()">레시피 저장</button>
     </div>
   </div>
 </div>
@@ -1182,6 +1421,8 @@ function getUsers(){
 function saveUsers(u){DB.s('users',u);FB.push();}
 function getPlaces(){return DB.g('places',[]);}
 function savePlaces(p){DB.s('places',p);FB.push();}
+function getRecipes(){return DB.g('recipes',[]);}
+function saveRecipes(r){DB.s('recipes',r);FB.push();}
 function hash(s){let h=0;for(let i=0;i<s.length;i++){h=(Math.imul(31,h)+s.charCodeAt(i))|0;}return h.toString(36);}
 
 function getInviteCodes(){return DB.g('invite_codes',[]);}
@@ -1244,7 +1485,7 @@ const FB = {
     this._pushTimer=null;
     const url=this.url; if(!url)return;
     try{
-      const payload={users:getUsers(),places:getPlaces(),invite_codes:getInviteCodes(),kakao_rest_key:DB.g('kakao_rest_key',''),kakao_js_key:DB.g('kakao_js_key',''),pushedAt:new Date().toISOString()};
+      const payload={users:getUsers(),places:getPlaces(),invite_codes:getInviteCodes(),recipes:getRecipes(),kakao_rest_key:DB.g('kakao_rest_key',''),kakao_js_key:DB.g('kakao_js_key',''),pushedAt:new Date().toISOString()};
       const _ps=this.secret;
       await fetch(url+'/tj.json'+(_ps?'?auth='+_ps:''),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
       showSyncStatus('☁️ 동기화 완료');
@@ -1271,6 +1512,8 @@ const FB = {
       else if(d.pushedAt&&d.places===undefined)DB.s('places',[]);
       if(Array.isArray(d.invite_codes))DB.s('invite_codes',d.invite_codes);
       else if(d.pushedAt&&d.invite_codes===undefined)DB.s('invite_codes',[]);
+      if(Array.isArray(d.recipes))DB.s('recipes',d.recipes);
+      else if(d.pushedAt&&d.recipes===undefined)DB.s('recipes',[]);
       if(d.kakao_rest_key)DB.s('kakao_rest_key',d.kakao_rest_key);
       if(d.kakao_js_key)DB.s('kakao_js_key',d.kakao_js_key);
       return true;
@@ -2123,8 +2366,8 @@ function showPinPopup(id){
     :'<div style="width:52px;height:52px;background:var(--sf2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">'+(cat?cat.e:'🍴')+'</div>';
 
   const typeTag=type==='wish'
-    ?'<span style="color:#1565C0;font-weight:700">📌 방문예정</span>'
-    :'<span style="color:#2E7D32;font-weight:700">✅ 방문완료</span>';
+    ?'<span style="color:#1565C0;font-weight:700">방문예정</span>'
+    :'<span style="color:#2E7D32;font-weight:700">방문완료</span>';
   const ratingStr=p.rating?' · ★'+p.rating+'/5':'';
   const spiceStr=p.spiciness?' · 🌶'+p.spiciness:'';
 
@@ -2816,7 +3059,7 @@ function cardHTML(p){
         </div>
       </div>
       <div class="card-row">
-        <span class="tag ${type==='wish'?'tag-w':'tag-v'}">${type==='wish'?'📌 방문예정':'✅ 방문완료'}</span>
+        <span class="tag ${type==='wish'?'tag-w':'tag-v'}">${type==='wish'?'방문예정':'방문완료'}</span>
         ${p.rating?`<span class="card-stat" style="line-height:1.4">${starsHTML(p.rating,13)} <span style="font-size:10px;color:var(--tx3)">${p.rating}/5</span></span>`:''}
         ${price?`<span class="card-stat">${price}</span>`:''}
       </div>
@@ -2848,7 +3091,7 @@ function renderWishlist(){
         <div class="wish-name">${cat?cat.e+' ':''} ${esc(p.name)}</div>
         <div class="wish-meta">${esc(p.category)} · ${esc(p.address||'')}</div>
       </div>
-      <button onclick="event.stopPropagation();markAsVisited('${p.id}')" style="background:#e8f5e9;color:var(--green);font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid #c8e6c9;font-weight:700;cursor:pointer;flex-shrink:0;line-height:1.4;text-align:center">✅<br>방문완료</button>
+      <button onclick="event.stopPropagation();markAsVisited('${p.id}')" style="background:#e8f5e9;color:var(--green);font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid #c8e6c9;font-weight:700;cursor:pointer;flex-shrink:0;line-height:1.4;text-align:center">방문완료</button>
     </div>`;
   }).join('');
 }
@@ -2885,12 +3128,12 @@ function renderStats(){
       <div class="stat-card"><div class="stat-num">${avgRating||'–'}</div><div class="stat-lbl">평균 별점</div></div>
       <div class="stat-card"><div class="stat-num">${revisitCounts[0]}</div><div class="stat-lbl">또 가고 싶다</div></div>
     </div>
-    ${topCat.length?`<div class="sec-title">📊 카테고리별 방문</div>
+    ${topCat.length?`<div class="sec-title">카테고리별 방문</div>
     ${topCat.map(([k,v])=>{const cat=C.CATS.find(c=>c.k===k);return `<div class="bar-row">
       <div class="bar-lbl"><span>${cat?cat.e:''} ${k}</span><span>${v}곳</span></div>
       <div class="bar-bg"><div class="bar-fill" style="width:${Math.round(v/maxCat*100)}%"></div></div>
     </div>`;}).join('')}`:''}
-    ${visited.length?`<div class="sec-title">📝 최근 방문</div>
+    ${visited.length?`<div class="sec-title">최근 방문</div>
     <div style="padding:0 10px 10px">${[...visited].filter(p=>p.visitDate||p.createdAt).sort((a,b)=>(b.visitDate||b.createdAt||'').localeCompare(a.visitDate||a.createdAt||'')).map(p=>{
       const cat=C.CATS.find(c=>c.k===p.category);
       const region=(p.address||'').trim().split(/\s+/).slice(0,2).join(' ');
@@ -2948,7 +3191,7 @@ function renderProfile(){
   const unusedCodes=myCodesRaw.filter(c=>!c.used);
   const inviteSection=canInviteGuest()?`
     <div style="padding:14px 16px;border-top:1px solid var(--bd)">
-      <div style="font-size:11px;font-weight:700;color:var(--tx2);letter-spacing:.4px;margin-bottom:10px">🎟️ 초대 코드 생성</div>
+      <div style="font-size:11px;font-weight:700;color:var(--tx2);letter-spacing:.4px;margin-bottom:10px">초대 코드 생성</div>
       ${canInvitePartner()?`<button onclick="genCode('partner')" style="width:100%;background:linear-gradient(135deg,#5C6BC0,#7986CB);color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:700;margin-bottom:8px">🐻 파트너 초대코드 생성</button>`:''}
       <button onclick="genCode('guest')" style="width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:10px;padding:10px;font-size:13px;font-weight:700;color:var(--tx2)">👤 게스트 초대코드 생성</button>
       ${myCodesRaw.length?`<div style="margin-top:10px">
@@ -2987,12 +3230,12 @@ function renderProfile(){
       <div class="p-stat"><div class="p-stat-num">${places.length}</div><div class="p-stat-lbl">전체</div></div>
     </div>
     <div class="profile-card">
-      ${isOwner()?`<div class="profile-row"><span class="profile-row-lbl">👥 멤버 관리</span><button style="background:var(--pr);color:#fff;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700" onclick="openUsersModal()">관리</button></div>`:''}
-      ${isOwner()?`<div class="profile-row"><span class="profile-row-lbl">💾 데이터 관리</span><button style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--tx2)" onclick="openDataModal()">관리</button></div>`:''}
+      ${isOwner()?`<div class="profile-row"><span class="profile-row-lbl">멤버 관리</span><button style="background:var(--pr);color:#fff;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700" onclick="openUsersModal()">관리</button></div>`:''}
+      ${isOwner()?`<div class="profile-row"><span class="profile-row-lbl">데이터 관리</span><button style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--tx2)" onclick="openDataModal()">관리</button></div>`:''}
       <div class="profile-row"><span class="profile-row-lbl">✏️ 닉네임</span><div style="display:flex;gap:6px;align-items:center"><input id="nickname-input" type="text" value="${esc(ME.nickname||ME.username)}" style="width:110px;font-size:13px;padding:5px 8px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx)"><button onclick="saveNickname()" style="background:var(--pr);color:#fff;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700">저장</button></div></div>
-      ${!isStandalone()?`<div class="profile-row"><span class="profile-row-lbl">📲 앱으로 설치</span><button style="background:var(--gold);color:#0D0A06;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700" onclick="installApp()">홈 화면에 추가</button></div>`:''}
+      ${!isStandalone()?`<div class="profile-row"><span class="profile-row-lbl">앱으로 설치</span><button style="background:var(--gold);color:#0D0A06;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700" onclick="installApp()">홈 화면에 추가</button></div>`:''}
       <div class="profile-row"><span class="profile-row-lbl">🚪 로그아웃</span><button style="background:#ffebee;border:1px solid #ffcdd2;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--pv)" onclick="logout()">로그아웃</button></div>
-      ${!ME.kakaoId?`<div class="profile-row"><span class="profile-row-lbl">🔗 카카오 연동</span><button style="background:#FEE500;color:#000;border-radius:8px;padding:5px 14px;font-size:12px;font-weight:700;border:none;cursor:pointer" onclick="linkKakaoAccount()">카카오 연동하기</button></div>`:''}
+      ${!ME.kakaoId?`<div class="profile-row"><span class="profile-row-lbl">카카오 연동</span><button style="background:#FEE500;color:#000;border-radius:8px;padding:5px 14px;font-size:12px;font-weight:700;border:none;cursor:pointer" onclick="linkKakaoAccount()">카카오 연동하기</button></div>`:''}
     </div>
     ${kakaoSection}
     ${inviteSection}`;
@@ -3090,7 +3333,7 @@ function openDetail(id){
   html+=`<div style="font-size:12px;color:var(--tx3);margin-bottom:8px">${esc(p.category)}${p.menu?' · '+esc(p.menu):''}${p.visitDate?' · '+p.visitDate:''}</div>`;
 
   html+=`<div class="detail-badges">
-    <span class="detail-badge">${type==='wish'?'📌 방문예정':'✅ 방문완료'}</span>
+    <span class="detail-badge">${type==='wish'?'방문예정':'방문완료'}</span>
     ${p.price?`<span class="detail-badge">💰 ${p.price.toLocaleString()}원</span>`:''}
     ${p.revisit>=0?`<span class="detail-badge">${C.REVISIT_LBL[p.revisit]}</span>`:''}
   </div>`;
@@ -3109,9 +3352,9 @@ function openDetail(id){
       ❤️ ${p.likes?p.likes.length:0}
     </button>
     <button class="action-btn" onclick="shareAsCard('${id}')" style="color:var(--pr)">🔗 공유</button>
-    ${isPartner()||p.createdBy===ME.id?`<button class="action-btn" onclick="closeModal('modal-detail');openEditModal('${id}')">✏️ 수정</button>`:''}
+    ${isPartner()||p.createdBy===ME.id?`<button class="action-btn" onclick="closeModal('modal-detail');openEditModal('${id}')">수정</button>`:''}
     ${isOwner()||p.createdBy===ME.id?`<button class="action-btn" style="color:var(--pv)" onclick="confirmDelete('${id}')">🗑️ 삭제</button>`:''}
-    ${type==='wish'?`<button class="action-btn" style="color:var(--green)" onclick="markAsVisited('${id}');closeModal('modal-detail')">✅ 방문완료</button>`:''}
+    ${type==='wish'?`<button class="action-btn" style="color:var(--green)" onclick="markAsVisited('${id}');closeModal('modal-detail')">방문완료</button>`:''}
   </div>`;
 
   html+=`<div class="divider"></div>`;
@@ -3706,7 +3949,7 @@ async function _copyText(text){
 
 function _buildShareText(p){
   const cat=C.CATS.find(c=>c.k===p.category);
-  const type=p.type==='wish'?'📌 방문예정':'✅ 방문완료';
+  const type=p.type==='wish'?'방문예정':'방문완료';
   let t=`🍽️ ${cat?cat.e:''} ${p.name}\n${type} · ${p.category}\n`;
   if(p.address)t+=`📍 ${p.address}\n`;
   if(p.rating)t+=`⭐ 별점 ${p.rating}/5\n`;
@@ -3838,7 +4081,7 @@ function openAvatarPicker(){
   // 모달 타이틀 역할별 안내
   const titleMap={OWNER:'🐶 아이콘 선택',PARTNER:'🐻 아이콘 선택',GUEST:'🍽️ 아이콘 선택'};
   const titleEl=document.querySelector('#modal-avatar .modal-title');
-  if(titleEl)titleEl.textContent=titleMap[role]||'🖼️ 프로필 아이콘 선택';
+  if(titleEl)titleEl.textContent=titleMap[role]||'프로필 아이콘 선택';
   openModal('modal-avatar');
 }
 
@@ -3980,98 +4223,302 @@ function closeModal(id){
 }
 
 /* ═══════════════════════════════════════════════
-   RECIPES — 우리의 레시피 카드북
+   RECIPES — 메종 레시피 북 (네이티브 + 등록 + 동기화)
 ═══════════════════════════════════════════════ */
-const RECIPES=[
-  {n:'버터갈릭 쉬림프 로제불닭',c:'파스타',f:'01'},
-  {n:'항정살 갈릭 아라비아타',c:'파스타',f:'02'},
-  {n:'대게살 크림 까르보',c:'파스타',f:'03'},
-  {n:'쉬림프 아라비아타',c:'파스타',f:'04'},
-  {n:'핵불닭 갈릭 파스타',c:'파스타',f:'05'},
-  {n:'베이컨 계란 불닭 까르보',c:'파스타',f:'06'},
-  {n:'핵불닭 마늘오일 파스타',c:'파스타',f:'07'},
-  {n:'항정살 김치찌개',c:'국·찌개',f:'08'},
-  {n:'해물 된장국',c:'국·찌개',f:'09'},
-  {n:'된장 항정살 수프',c:'국·찌개',f:'10'},
-  {n:'갈릭버터 항정살',c:'메인',f:'11'},
-  {n:'직화 항정살 볶음',c:'메인',f:'12'},
-  {n:'고추장 불닭 항정살',c:'메인',f:'13'},
-  {n:'갈릭버터 쉬림프',c:'메인',f:'14'},
-  {n:'고추장 버터 갈릭 새우',c:'메인',f:'15'},
-  {n:'김치 베이컨 계란 볶음',c:'반찬',f:'16'},
-  {n:'직화 김치 볶음',c:'반찬',f:'17'},
-  {n:'대게살 참기름김 스크램블',c:'반찬',f:'18'},
-  {n:'김치 비빔소면',c:'소면',f:'19'},
-  {n:'된장 소면국',c:'소면',f:'20'},
-  {n:'직화 양념 볶음소면',c:'소면',f:'21'},
-  {n:'고추장 버터 갈릭 소면',c:'소면',f:'22'},
-  {n:'해물 마늘버터 소면',c:'소면',f:'23'},
-  {n:'로제불닭 새우 덮밥',c:'비빔·덮밥',f:'24'},
-  {n:'항정살 직화 비빔밥',c:'비빔·덮밥',f:'25'},
-  {n:'핵불닭 된장 항정살 찌개',c:'매운맛',f:'26'},
-  {n:'고추장 핵불닭 직화 항정살',c:'매운맛',f:'27'},
-  {n:'핵불닭 로제 감칠맛 파스타',c:'매운맛',f:'28'},
-  {n:'김치 핵불닭 비빔 소면',c:'매운맛',f:'29'},
-  {n:'핵불닭 해물 된장국',c:'매운맛',f:'30'},
-  {n:'핵불닭 김치 베이컨 계란',c:'매운맛',f:'31'},
-  {n:'핵불닭 마늘 오일 소면',c:'매운맛',f:'32'},
-  {n:'셰프팁 · 공통공식',c:'셰프팁',f:'33'}
-];
+let _builtinRecipes=[];
+let _builtinState='idle'; // idle | loading | done | error
 const RECIPE_CAT_META=[
-  {k:'파스타',e:'🍝'},{k:'국·찌개',e:'🍲'},{k:'메인',e:'🥩'},{k:'반찬',e:'🥢'},
-  {k:'소면',e:'🍜'},{k:'비빔·덮밥',e:'🍚'},{k:'매운맛',e:'🌶️'},{k:'셰프팁',e:'👨‍🍳'}
+  {k:'파스타',e:'🍝',c:'#B0703A'},{k:'국·찌개',e:'🍲',c:'#8F4A32'},{k:'메인',e:'🥩',c:'#8E3D3D'},
+  {k:'반찬',e:'🥢',c:'#6F7A3C'},{k:'소면',e:'🍜',c:'#C08A2E'},{k:'비빔·덮밥',e:'🍚',c:'#5E7355'},
+  {k:'매운맛',e:'🌶️',c:'#B33A2B'},{k:'셰프팁',e:'📔',c:'#4E5D6B'},{k:'기타',e:'🍽️',c:'#8A7358'}
 ];
 let recipeFilter='all';
+let _rcpDetailId=null;
+let _rcpServ=2; // 기본 2인 (커플 앱)
+let _rcpEditId=null;
 let _rcvList=[],_rcvIdx=0;
 
+function loadBuiltinRecipes(){
+  if(_builtinState==='loading'||_builtinState==='done')return;
+  _builtinState='loading';
+  fetch('recipes/data.json').then(r=>{
+    if(!r.ok)throw new Error('http '+r.status);
+    return r.json();
+  }).then(arr=>{
+    _builtinRecipes=(arr||[]).map(r=>({...r,id:r.f,builtin:true}));
+    _builtinState='done';
+    if(VIEW==='recipe')renderRecipes();
+  }).catch(()=>{
+    _builtinState='error';
+    if(VIEW==='recipe')renderRecipes();
+  });
+}
+function allRecipes(){return [..._builtinRecipes,...getRecipes()];}
+function findRecipe(id){return allRecipes().find(r=>r.id===id);}
+function recipeCatMeta(k){return RECIPE_CAT_META.find(c=>c.k===k)||RECIPE_CAT_META[RECIPE_CAT_META.length-1];}
+
 function getRecipeFavs(){return DB.g('recipe_favs',[]);}
-function toggleRecipeFav(f,ev){
+function toggleRecipeFav(id,ev){
   if(ev)ev.stopPropagation();
   let favs=getRecipeFavs();
-  favs=favs.includes(f)?favs.filter(x=>x!==f):[...favs,f];
-  DB.s('recipe_favs',favs); // 기기 로컬 저장 (커플 공유 데이터와 분리)
+  favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id];
+  DB.s('recipe_favs',favs); // 기기 로컬 (개인 취향은 공유 데이터와 분리)
   if(VIEW==='recipe')renderRecipes();
+  if(_rcpDetailId)_rcpDetailSyncFav();
   const rv=document.getElementById('recipe-viewer');
   if(rv&&!rv.classList.contains('hidden'))_rcvSync(false);
 }
+
 function recipeFiltered(){
-  if(recipeFilter==='fav'){const favs=getRecipeFavs();return RECIPES.filter(r=>favs.includes(r.f));}
-  if(recipeFilter==='all')return RECIPES;
-  return RECIPES.filter(r=>r.c===recipeFilter);
+  let list=allRecipes();
+  if(recipeFilter==='fav'){const favs=getRecipeFavs();list=list.filter(r=>favs.includes(r.id));}
+  else if(recipeFilter==='mine')list=list.filter(r=>!r.builtin);
+  else if(recipeFilter!=='all')list=list.filter(r=>r.cat===recipeFilter);
+  const qEl=document.getElementById('recipe-search');
+  const q=(qEl?qEl.value:'').trim().toLowerCase();
+  if(q)list=list.filter(r=>
+    (r.name||'').toLowerCase().includes(q)||
+    (r.cat||'').toLowerCase().includes(q)||
+    (r.ings||[]).some(i=>(i.n||'').toLowerCase().includes(q)));
+  return list;
 }
 function setRecipeFilter(f){recipeFilter=f;renderRecipes();}
+
 function renderRecipes(){
   const chipsEl=document.getElementById('recipe-filter-chips');
   if(!chipsEl)return;
+  if(_builtinState==='idle')loadBuiltinRecipes();
   const favs=getRecipeFavs();
+  const mineCnt=getRecipes().length;
   chipsEl.innerHTML=
-    `<button class="chip ${recipeFilter==='all'?'active':''}" onclick="setRecipeFilter('all')">전체 ${RECIPES.length}</button>`+
-    `<button class="chip ${recipeFilter==='fav'?'active':''}" onclick="setRecipeFilter('fav')">❤️ 즐겨찾기${favs.length?' '+favs.length:''}</button>`+
-    RECIPE_CAT_META.map(c=>`<button class="chip ${recipeFilter===c.k?'active':''}" onclick="setRecipeFilter('${c.k}')">${c.e} ${c.k}</button>`).join('');
-  const list=recipeFiltered();
+    `<button class="chip ${recipeFilter==='all'?'active':''}" onclick="setRecipeFilter('all')">전체 ${allRecipes().length}</button>`+
+    `<button class="chip ${recipeFilter==='fav'?'active':''}" onclick="setRecipeFilter('fav')">♥ 즐겨찾기${favs.length?' '+favs.length:''}</button>`+
+    (mineCnt?`<button class="chip ${recipeFilter==='mine'?'active':''}" onclick="setRecipeFilter('mine')">우리 레시피 ${mineCnt}</button>`:'')+
+    RECIPE_CAT_META.filter(c=>c.k!=='기타'||allRecipes().some(r=>r.cat==='기타')).map(c=>
+      `<button class="chip ${recipeFilter===c.k?'active':''}" onclick="setRecipeFilter('${c.k}')">${c.e} ${c.k}</button>`).join('');
   const el=document.getElementById('recipe-content');
-  const hero=recipeFilter==='all'?`<div class="recipe-hero" onclick="openRecipeCover()"><img src="recipes/t00.jpg" alt="레시피 카드북 표지" loading="lazy"><div class="recipe-hero-txt"><div class="recipe-hero-title">우리의 레시피 카드북</div><div class="recipe-hero-sub">Couple Recipe Collection · ${RECIPES.length} Cards</div></div></div>`:'';
-  if(!list.length){
-    el.innerHTML=hero+`<div class="empty"><div class="empty-icon">${recipeFilter==='fav'?'💛':'🍳'}</div><div class="empty-title">${recipeFilter==='fav'?'즐겨찾기한 레시피가 없어요':'레시피가 없어요'}</div><div class="empty-sub">${recipeFilter==='fav'?'카드의 하트를 눌러 자주 만드는 레시피를 모아보세요':''}</div></div>`;
+  if(_builtinState==='loading'&&!_builtinRecipes.length&&!mineCnt){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">📔</div><div class="empty-title">레시피 북을 펼치는 중…</div></div>`;
     return;
   }
-  el.innerHTML=hero+`<div class="recipe-grid">`+list.map((r,i)=>{
-    const cm=RECIPE_CAT_META.find(c=>c.k===r.c);
-    return `<div class="recipe-card" onclick="openRecipeViewer(${i})">
-      <img src="recipes/t${r.f}.jpg" alt="${esc(r.n)}" loading="lazy">
-      <button class="recipe-fav" onclick="toggleRecipeFav('${r.f}',event)">${favs.includes(r.f)?'❤️':'🤍'}</button>
-      <div class="recipe-card-name">${cm?cm.e+' ':''}${esc(r.n)}</div>
+  const head=`<div class="rcp-head">
+    <div class="rcp-head-eyebrow">MAISON COLLECTION</div>
+    <div class="rcp-head-title">우리의 레시피 북</div>
+    <div class="rcp-head-rule"><span></span><em>Recettes de la Maison</em><span></span></div>
+    <div class="rcp-head-sub">${allRecipes().length}개의 레시피 · <b onclick="openRecipeCover()">표지 보기</b></div>
+  </div>`;
+  const list=recipeFiltered();
+  if(!list.length){
+    const msg=recipeFilter==='fav'?['♥','즐겨찾기한 레시피가 없어요','카드의 하트를 눌러 자주 만드는 레시피를 모아보세요']
+      :recipeFilter==='mine'?['✎','아직 등록한 레시피가 없어요','상단 ＋ 버튼으로 우리만의 레시피를 남겨보세요']
+      :_builtinState==='error'?['📡','레시피를 불러오지 못했어요','네트워크 확인 후 다시 열어주세요']
+      :['🔍','조건에 맞는 레시피가 없어요',''];
+    el.innerHTML=head+`<div class="empty"><div class="empty-icon">${msg[0]}</div><div class="empty-title">${msg[1]}</div><div class="empty-sub">${msg[2]}</div></div>`;
+    return;
+  }
+  const favSet=new Set(favs);
+  el.innerHTML=head+`<div class="rcp-grid">`+list.map(r=>{
+    const cm=recipeCatMeta(r.cat);
+    const spice=(r.profile||[]).find(p=>p.l==='매콤');
+    const meta=[esc(r.cat||'')];
+    if(r.time)meta.push(esc(r.time));
+    const badge=r.builtin?(r.badge?`<span class="rcp-badge">${esc(r.badge)}</span>`:'')
+      :`<span class="rcp-badge">OUR RECIPE</span>`;
+    return `<div class="rcp-card" onclick="openRecipeDetail('${r.id}')">
+      <div class="rcp-vis" style="background:linear-gradient(150deg,${cm.c}26,${cm.c}0A)">
+        <span class="rcp-vis-emoji">${cm.e}</span>${badge}
+        <button class="rcp-fav ${favSet.has(r.id)?'on':''}" onclick="toggleRecipeFav('${r.id}',event)">${favSet.has(r.id)?'♥':'♡'}</button>
+      </div>
+      <div class="rcp-body">
+        <div class="rcp-name">${esc(r.name)}</div>
+        <div class="rcp-meta">${meta.join(' · ')}${r.stars?` <span class="st">${'★'.repeat(Math.min(5,r.stars))}</span>`:''}${spice&&spice.v>=4?' 🌶':''}</div>
+      </div>
     </div>`;
   }).join('')+`</div>`;
 }
-function openRecipeViewer(i){
-  _rcvList=recipeFiltered();_rcvIdx=i;
+
+/* ── 상세 ── */
+function openRecipeDetail(id){
+  const r=findRecipe(id); if(!r)return;
+  _rcpDetailId=id;
+  document.getElementById('rcp-detail-title').textContent=r.name;
+  _renderRecipeDetailBody(r);
+  openModal('modal-recipe');
+}
+function _rcpDetailSyncFav(){
+  const b=document.getElementById('rcpd-fav-btn');
+  if(!b)return;
+  const on=getRecipeFavs().includes(_rcpDetailId);
+  b.textContent=on?'♥ 즐겨찾는 레시피':'♡ 즐겨찾기';
+  b.style.color=on?'#F0796B':'';
+}
+function _renderRecipeDetailBody(r){
+  const cm=recipeCatMeta(r.cat);
+  const favOn=getRecipeFavs().includes(r.id);
+  let h=`<div class="rcpd-meta">
+    ${r.badge?`<span class="rcpd-chip gold">${esc(r.badge)}</span>`:(r.builtin?'':'<span class="rcpd-chip gold">OUR RECIPE</span>')}
+    <span class="rcpd-chip">${cm.e} ${esc(r.cat||'기타')}</span>
+    ${r.time?`<span class="rcpd-chip">⏱ ${esc(r.time)}</span>`:''}
+    ${r.stars?`<span class="rcpd-stars">${'★'.repeat(Math.min(5,r.stars))}</span>`:''}
+  </div>`;
+  if(r.desc)h+=`<div class="rcpd-desc">“${esc(r.desc)}”</div>`;
+  if(r.profile&&r.profile.length){
+    h+=`<div class="rcpd-sec"><div class="rcpd-sec-t">맛 프로파일</div><div class="rcpd-sec-b rcpd-profile">`+
+      r.profile.map(p=>`<div class="rcpd-prow"><span class="rcpd-plbl">${esc(p.l)}</span><span class="rcpd-dots">${[1,2,3,4,5].map(i=>`<span class="rcpd-dot ${i<=p.v?'on':''}"></span>`).join('')}</span></div>`).join('')+
+      `</div></div>`;
+  }
+  if(r.ings&&r.ings.length){
+    h+=`<div class="rcpd-sec"><div class="rcpd-sec-t" style="align-items:center">재료
+      <span class="rcpd-serv">
+        <button class="${_rcpServ===1?'on':''}" onclick="setRcpServ(1)">1인</button>
+        <button class="${_rcpServ===2?'on':''}" onclick="setRcpServ(2)">2인</button>
+      </span></div>
+      <div class="rcpd-sec-b" id="rcpd-ings">${_rcpIngsHtml(r)}</div></div>`;
+  }
+  if(r.steps&&r.steps.length){
+    h+=`<div class="rcpd-sec"><div class="rcpd-sec-t">조리 순서</div><div class="rcpd-sec-b">`+
+      r.steps.map((s,i)=>`<div class="rcpd-step"><span class="rcpd-step-no">${i+1}</span><span class="rcpd-step-tx">${esc(s)}</span></div>`).join('')+
+      `</div></div>`;
+  }
+  if(r.tips&&r.tips.length){
+    h+=`<div class="rcpd-sec"><div class="rcpd-sec-t">셰프의 비결</div><div class="rcpd-sec-b rcpd-tips">`+
+      r.tips.map(t=>`<div class="rcpd-tip">${esc(t)}</div>`).join('')+`</div></div>`;
+  }
+  h+=`<div class="rcpd-actions">
+    <button class="btn-sec" id="rcpd-fav-btn" style="flex:1" onclick="toggleRecipeFav('${r.id}')">${favOn?'♥ 즐겨찾는 레시피':'♡ 즐겨찾기'}</button>
+    ${r.builtin?`<button class="btn-sec" style="flex:1" onclick="openOriginalCard('${r.id}')">원본 카드 보기</button>`:''}
+    ${!r.builtin&&canEditRecipe(r)?`<button class="btn-sec" style="flex:1" onclick="openRecipeForm('${r.id}')">수정</button><button class="btn-danger" onclick="deleteRecipe('${r.id}')">삭제</button>`:''}
+  </div>`;
+  if(!r.builtin){
+    const u=getUsers().find(x=>x.id===r.createdBy);
+    h+=`<div class="rcpd-by">— ${esc(u?(u.nickname||u.username):'우리')}의 레시피${r.createdAt?' · '+r.createdAt.slice(0,10):''} —</div>`;
+  }
+  document.getElementById('rcp-detail-body').innerHTML=h;
+  if(favOn)_rcpDetailSyncFav();
+}
+function _rcpIngsHtml(r){
+  return (r.ings||[]).map(i=>`<div class="rcpd-ing"><span class="n">${esc(i.n)}</span><span class="q">${esc(_rcpServ===1?(i.q1||i.q2||''):(i.q2||i.q1||''))}</span></div>`).join('');
+}
+function setRcpServ(n){
+  _rcpServ=n;
+  const r=findRecipe(_rcpDetailId);
+  if(r)_renderRecipeDetailBody(r);
+}
+function canEditRecipe(r){return canWrite()&&ME&&(r.createdBy===ME.id||ME.role==='OWNER');}
+
+/* ── 등록 / 수정 ── */
+function openRecipeForm(editId=null){
+  if(!canWrite()){toast('레시피 등록 권한이 없습니다');return;}
+  _rcpEditId=editId;
+  const r=editId?findRecipe(editId):null;
+  if(editId&&(!r||r.builtin)){toast('수정할 수 없는 레시피입니다');return;}
+  document.getElementById('rcp-form-title').textContent=r?'레시피 수정':'레시피 등록';
+  const cats=RECIPE_CAT_META.map(c=>c.k);
+  const spice=r&&(r.profile||[]).find(p=>p.l==='매콤');
+  const sv=spice?spice.v:0;
+  document.getElementById('rcp-form-body').innerHTML=`
+    <div class="form-sec"><span class="form-lbl">레시피 이름 <span class="req">*</span></span>
+      <input type="text" id="rcpf-name" placeholder="예: 항정살 김치찌개" value="${r?esc(r.name):''}"></div>
+    <div class="form-sec"><span class="form-lbl">카테고리 <span class="req">*</span></span>
+      <div class="cat-grid" style="grid-template-columns:repeat(3,1fr)" id="rcpf-cats">${cats.map(k=>{
+        const m=recipeCatMeta(k);
+        return `<button class="cat-btn ${r&&r.cat===k?'active':''}" data-cat="${k}" onclick="_rcpfCat(this)">${m.e} ${k}</button>`;
+      }).join('')}</div></div>
+    <div class="form-sec"><span class="form-lbl">조리 시간 · 한 줄 소개</span>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="rcpf-time" placeholder="20분" style="flex:0 0 90px" value="${r&&r.time?esc(r.time):''}">
+        <input type="text" id="rcpf-desc" placeholder="예: 마요네즈로 더 크리미한 로제" value="${r&&r.desc?esc(r.desc):''}">
+      </div></div>
+    <div class="form-sec"><span class="form-lbl">맵기</span>
+      <div class="rcpf-dots" id="rcpf-spice">${[1,2,3,4,5].map(i=>`<button class="rcpf-dot ${i<=sv?'on':''}" data-v="${i}" onclick="_rcpfSpice(${i})">${i}</button>`).join('')}
+      <button style="font-size:11px;color:var(--tx3);background:none;margin-left:4px" onclick="_rcpfSpice(0)">없음</button></div></div>
+    <div class="form-sec"><span class="form-lbl">재료 (1인 / 2인 분량)</span>
+      <div id="rcpf-ings">${(r&&r.ings&&r.ings.length?r.ings:[{n:'',q1:'',q2:''}]).map(i=>_rcpfIngRow(i)).join('')}</div>
+      <button class="rcpf-add" onclick="_rcpfAddIng()">＋ 재료 추가</button></div>
+    <div class="form-sec"><span class="form-lbl">조리 순서</span>
+      <div id="rcpf-steps">${(r&&r.steps&&r.steps.length?r.steps:['']).map(s=>_rcpfStepRow(s)).join('')}</div>
+      <button class="rcpf-add" onclick="_rcpfAddStep()">＋ 단계 추가</button></div>
+    <div class="form-sec" style="padding-bottom:16px"><span class="form-lbl">셰프의 비결 (줄바꿈으로 구분)</span>
+      <textarea id="rcpf-tips" rows="3" style="resize:none" placeholder="예: 마요네즈는 반드시 불 끈 뒤 넣기">${r&&r.tips?esc(r.tips.join('\n')):''}</textarea></div>`;
+  openModal('modal-recipe-form');
+}
+function _rcpfIngRow(i){
+  return `<div class="rcpf-row"><input type="text" placeholder="재료명" class="rcpf-ing-n" value="${esc(i.n||'')}"><input type="text" placeholder="1인" class="q rcpf-ing-q1" value="${esc(i.q1||'')}"><input type="text" placeholder="2인" class="q rcpf-ing-q2" value="${esc(i.q2||'')}"><button class="rcpf-del" onclick="this.parentElement.remove()">✕</button></div>`;
+}
+function _rcpfStepRow(s){
+  return `<div class="rcpf-row"><textarea rows="2" placeholder="조리 단계 설명" class="rcpf-step-tx">${esc(s||'')}</textarea><button class="rcpf-del" onclick="this.parentElement.remove()">✕</button></div>`;
+}
+function _rcpfAddIng(){document.getElementById('rcpf-ings').insertAdjacentHTML('beforeend',_rcpfIngRow({}));}
+function _rcpfAddStep(){document.getElementById('rcpf-steps').insertAdjacentHTML('beforeend',_rcpfStepRow(''));}
+function _rcpfCat(btn){document.querySelectorAll('#rcpf-cats .cat-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+function _rcpfSpice(v){
+  document.querySelectorAll('#rcpf-spice .rcpf-dot').forEach(b=>b.classList.toggle('on',Number(b.dataset.v)<=v));
+}
+function saveRecipeForm(){
+  if(!canWrite()){toast('권한이 없습니다');return;}
+  const name=document.getElementById('rcpf-name').value.trim();
+  const catBtn=document.querySelector('#rcpf-cats .cat-btn.active');
+  if(!name){toast('레시피 이름을 입력해주세요');return;}
+  if(!catBtn){toast('카테고리를 선택해주세요');return;}
+  const ings=[...document.querySelectorAll('#rcpf-ings .rcpf-row')].map(row=>({
+    n:row.querySelector('.rcpf-ing-n').value.trim(),
+    q1:row.querySelector('.rcpf-ing-q1').value.trim(),
+    q2:row.querySelector('.rcpf-ing-q2').value.trim()
+  })).filter(i=>i.n);
+  const steps=[...document.querySelectorAll('#rcpf-steps .rcpf-step-tx')].map(t=>t.value.trim()).filter(Boolean);
+  const tips=document.getElementById('rcpf-tips').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const spiceOn=document.querySelectorAll('#rcpf-spice .rcpf-dot.on').length;
+  const recipes=getRecipes();
+  if(_rcpEditId){
+    const idx=recipes.findIndex(x=>x.id===_rcpEditId);
+    if(idx<0){toast('레시피를 찾을 수 없습니다');return;}
+    Object.assign(recipes[idx],{
+      name,cat:catBtn.dataset.cat,
+      time:document.getElementById('rcpf-time').value.trim(),
+      desc:document.getElementById('rcpf-desc').value.trim(),
+      profile:spiceOn?[{l:'매콤',v:spiceOn}]:[],
+      ings,steps,tips,updatedAt:new Date().toISOString()
+    });
+  }else{
+    recipes.push({
+      id:'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+      name,cat:catBtn.dataset.cat,
+      time:document.getElementById('rcpf-time').value.trim(),
+      desc:document.getElementById('rcpf-desc').value.trim(),
+      profile:spiceOn?[{l:'매콤',v:spiceOn}]:[],
+      ings,steps,tips,
+      createdBy:ME?ME.id:null,createdAt:new Date().toISOString()
+    });
+  }
+  saveRecipes(recipes); // localStorage + Firebase 동기화
+  closeModal('modal-recipe-form');
+  if(_rcpEditId&&_rcpDetailId===_rcpEditId){const r=findRecipe(_rcpEditId);if(r)_renderRecipeDetailBody(r);}
+  _rcpEditId=null;
+  toast(_rcpDetailId?'레시피가 저장되었습니다 ✓':'우리의 레시피가 등록되었습니다 ✓');
+  if(VIEW==='recipe')renderRecipes();
+}
+function deleteRecipe(id){
+  const r=findRecipe(id);
+  if(!r||r.builtin||!canEditRecipe(r)){toast('삭제할 수 없습니다');return;}
+  if(!confirm(`'${r.name}' 레시피를 삭제하시겠습니까?`))return;
+  saveRecipes(getRecipes().filter(x=>x.id!==id));
+  closeModal('modal-recipe');
+  _rcpDetailId=null;
+  toast('레시피가 삭제되었습니다');
+  if(VIEW==='recipe')renderRecipes();
+}
+
+/* ── 원본 카드 뷰어 (JPG) ── */
+function openOriginalCard(id){
+  const r=findRecipe(id);
+  if(!r||!r.builtin)return;
+  _rcvList=[{n:r.name,f:r.f,id:r.id}];_rcvIdx=0;
   document.getElementById('recipe-viewer').classList.remove('hidden');
   document.body.classList.add('modal-open');
   _rcvSync();
 }
 function openRecipeCover(){
-  _rcvList=[{n:'우리의 레시피 카드북',c:'',f:'00'}];_rcvIdx=0;
+  _rcvList=[{n:'우리의 레시피 북 · 표지',f:'00',id:'00'}];_rcvIdx=0;
   document.getElementById('recipe-viewer').classList.remove('hidden');
   document.body.classList.add('modal-open');
   _rcvSync();
@@ -4083,13 +4530,11 @@ function _rcvSync(resetImg=true){
   if(resetImg){
     img.classList.remove('zoomed');img.style.transform='';
     img.src='recipes/r'+r.f+'.jpg';
-    // 인접 카드 미리 로드 (스와이프 시 즉시 표시)
-    [_rcvIdx-1,_rcvIdx+1].forEach(j=>{const a=_rcvList[j];if(a){const p=new Image();p.src='recipes/r'+a.f+'.jpg';}});
   }
   document.getElementById('rcv-counter').textContent=(_rcvIdx+1)+' / '+_rcvList.length;
   document.getElementById('rcv-title').textContent=r.n;
   const favBtn=document.getElementById('rcv-fav');
-  favBtn.textContent=getRecipeFavs().includes(r.f)?'❤️':'🤍';
+  favBtn.textContent=getRecipeFavs().includes(r.id)?'♥':'♡';
   favBtn.style.visibility=r.f==='00'?'hidden':'visible';
 }
 function recipeStep(d){
@@ -4099,14 +4544,15 @@ function recipeStep(d){
 }
 function closeRecipeViewer(){
   document.getElementById('recipe-viewer').classList.add('hidden');
-  document.body.classList.remove('modal-open');
+  const anyOpen=document.querySelectorAll('.overlay:not(.hidden)').length>0;
+  if(!anyOpen)document.body.classList.remove('modal-open');
 }
 function toggleRecipeFavFromViewer(){
   const r=_rcvList[_rcvIdx];
   if(!r||r.f==='00')return;
-  toggleRecipeFav(r.f);
+  toggleRecipeFav(r.id);
 }
-// 뷰어 제스처: 좌우 스와이프 넘기기 · 아래 스와이프 닫기 · 탭 확대
+// 뷰어 제스처: 아래 스와이프 닫기 · 탭 확대
 (function(){
   const stage=document.getElementById('rcv-stage');
   const img=document.getElementById('rcv-img');
@@ -4263,6 +4709,7 @@ async function startApp(){
       }
     });
   }
+  loadBuiltinRecipes(); // 레시피 북 프리로드 (fire-and-forget)
   updateHeader();MAP.init();navTo('map');initPWA();
 }
 
