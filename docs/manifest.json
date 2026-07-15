@@ -2,46 +2,47 @@
   "name": "Taste Journey",
   "short_name": "Taste Journey",
   "description": "커플 맛집 투어 기록",
+  "id": "/?maison=2",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#0D0A06",
-  "theme_color": "#C9A86C",
+  "background_color": "#0B0805",
+  "theme_color": "#C8A96A",
   "lang": "ko",
   "icons": [
     {
-      "src": "icon-128.png",
+      "src": "maison-128.png",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-192.png",
+      "src": "maison-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-192.png",
+      "src": "maison-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "maison-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "maison-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "icon.svg",
+      "src": "icon-maison.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
