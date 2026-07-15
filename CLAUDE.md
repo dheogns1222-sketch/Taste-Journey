@@ -15,6 +15,14 @@ git commit -m "fix: 설명"
 git push origin master:main
 ```
 
+**배포 전 버전 3곳을 반드시 함께 올린다** (인앱 업데이트 배너가 이 버전을 비교):
+
+1. `docs/index.html` — `const APP_VER='X.Y.Z'`
+2. `docs/version.json` — `{"ver":"X.Y.Z","note":"업데이트 요약(배너에 표시)"}`
+3. `docs/sw.js` — `const CACHE='tj-vN'` (에셋 변경 시)
+
+APP_VER ≠ version.json이면 기존 사용자에게 상단 업데이트 배너가 뜨고, 탭하면 캐시 전체 삭제 후 새로고침된다.
+
 - **로컬 브랜치**: `master` → **원격 브랜치**: `main` (Vercel이 `main` 감시)
 - `.git/index.lock` 충돌 시 PC에서 수동 삭제 후 push (`sandbox에서 rm 불가`)
 - PowerShell 배포 스크립트: `scripts/deploy/[배포]-master-push.ps1`

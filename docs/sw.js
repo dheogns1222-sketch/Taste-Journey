@@ -1,4 +1,4 @@
-const CACHE='tj-v6';
+const CACHE='tj-v7';
 self.addEventListener('install',e=>e.waitUntil(self.skipWaiting()));
 self.addEventListener('activate',e=>e.waitUntil(
   caches.keys()
@@ -10,6 +10,8 @@ self.addEventListener('fetch',e=>{
   const url=new URL(e.request.url);
   // Firebase 동기화 요청은 캐시 대상 아님 (실시간 데이터)
   if(url.hostname.endsWith('firebasedatabase.app'))return;
+  // 버전 체크 파일은 항상 네트워크에서 (업데이트 감지용)
+  if(url.pathname.endsWith('/version.json'))return;
   // HTML 페이지는 항상 네트워크 우선 (최신 코드 보장) + 성공 응답은 오프라인 대비 저장
   if(e.request.mode==='navigate'){
     e.respondWith(
