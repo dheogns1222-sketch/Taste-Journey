@@ -33,7 +33,9 @@ APP_VER ≠ version.json이면 기존 사용자에게 상단 업데이트 배너
 
 - **로컬 브랜치**: `master` → **원격 브랜치**: `main` (Vercel이 `main` 감시)
 - `.git/index.lock` 충돌 시 PC에서 수동 삭제 후 push (`sandbox에서 rm 불가`)
+- 카카오맵 JS 키는 카카오 개발자 콘솔의 Web 플랫폼 도메인 등록이 필요(Referer 검사). 로컬 http 프리뷰에서는 SDK URL이 프로토콜 상대(`//dapi.kakao.com`)라 CSP에 막혀 카카오맵 테스트 불가 → OSM 폴백만 확인 가능. 상세는 WORKLOG 2026-08-18.
 - PowerShell 배포 스크립트: `scripts/deploy/[배포]-master-push.ps1` (`docs/` 스테이징 → `origin master` + `origin master:main` 푸시). `dev` 브랜치 사용 시 `[데브]-dev-push.ps1` → `[배포]-dev-to-master-merge.ps1`. `src/`는 2026-08-18 폐기(정본은 `docs/`뿐, 잔재는 `99_ARCHIVE\Taste-Journey_구버전잔재_2026-08-18`).
+- **배포 전 게이트**: `python scripts/dev/check-release.py` — 버전 3곳 일치·JS 문법·외부 호스트⊆CSP 자동 검사, ALL PASS 후 push.
 - 배포 헤더: `docs/vercel.json`에 CSP·HSTS 등 보안 헤더 적용(2026-08-18). 외부 리소스(스크립트/CSS/폰트/API 호스트) 추가 시 CSP 허용 목록도 함께 갱신하고 `python scripts/dev/serve-with-headers.py`(= `.claude/launch.json` `taste-journey`)로 콘솔 CSP 위반 0건 확인 후 배포.
 
 ## 파일 수정 패턴

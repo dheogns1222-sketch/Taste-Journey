@@ -8,7 +8,11 @@
 - **실측: Vercel Root Directory = `docs`** → 설정 정본은 `docs/vercel.json`. 루트 vercel.json은 읽히지 않아 제거(92d6ae5). Vercel 확정 근거는 `gh api repos/dheogns1222-sketch/Taste-Journey/deployments`의 Production 환경.
 - **배포 스크립트 지뢰 제거**: `[배포]-dev-to-master-merge.ps1`이 폐기된 `src/index.html`(6월 구버전)을 `docs/`에 덮어써 라이브를 롤백시키던 구조 → 삭제. 4개 스크립트 스테이징 `git add docs`, push `origin master` + `origin master:main`. `src/` git 삭제, 잔재(`src/manifest.json`·`docs/index.html.bak`·`*.ps1.bak4`)는 `99_ARCHIVE\Taste-Journey_구버전잔재_2026-08-18`로 이동.
 - 앱 코드 무변경 — 라이브 `APP_VER 2.0.1`, sw `tj-v7` 유지. 커밋 83a0c83 → 0ff9c33 → 3f393f5 → 1ddf05c → 92d6ae5.
-- **사장 지시: 재개 전까지 대기.** 재개 시 첫 확인: 사장 폰에서 지도 탭 열어 카카오맵 정상 표시 여부(CSP `unsafe-eval` 미필요 확정; 실패 시 자동 OSM 폴백이라 치명 아님).
+- **사장 지시: 재개 전까지 대기.**
+- 사전 준비(세션 말): ① 옛 일회성 스크립트 전부 `scripts/archive/*.ps1.txt`로 봉인(우클릭 실행 불가, README 참조) — 남은 실행 스크립트는 `[배포]-master-push.ps1`·`[배포]-dev-to-master-merge.ps1`·`[데브]-*` 뿐. ② 배포 전 게이트 `python scripts/dev/check-release.py` 신설(버전 3곳·JS 문법·외부 호스트⊆CSP 자동 검사, 현재 ALL PASS). ③ 로컬 `main`·`dev` 정렬, `.claude/skills` 정션 gitignore.
+- **CSP × 카카오맵 SDK 정적 검증 완료(잔여 리스크 해소)**: 로더(sdk.js 4.5.26)는 `t1.daumcdn.net/mapjsapi/...`만 로드(CSP `*.daumcdn.net` 커버), 본체 `kakao.js`의 유일한 `eval("document.namespaces")`는 try/catch 안(VML 감지)이라 `unsafe-eval` 없이도 정상, 타일은 https img. → 현 CSP로 카카오맵 동작에 문제 없음.
+- **재개 시 첫 확인 — 카카오 개발자 콘솔 도메인 등록(사장 계정 필요, 세션이 대신 못 함)**: 코드 기본 JS 키(`66fe…c20d`)로 SDK 요청 시 Referer가 Netlify·GitHub Pages면 200, **Vercel(`taste-journey-iota.vercel.app`)이면 401** → 정식 배포처에서 카카오맵이 뜨지 않고 OSM 폴백으로 동작 중일 가능성. (유저 기기가 Firebase 페이로드의 별도 `kakao_js_key`를 쓰고 있으면 예외.) 조치: developers.kakao.com → 내 애플리케이션 → 앱 설정 → 플랫폼 → Web 사이트 도메인에 `https://taste-journey-iota.vercel.app` 추가(로컬 테스트용 `http://localhost:8123`도 함께).
+- 유지보수 재개 시 1순위 코드 수정 후보(미적용, 배포엔 버전 범프 필요): `docs/index.html` 2089행 `s.src='//dapi.kakao.com/...'` → `'https://dapi.kakao.com/...'`. 프로토콜 상대 URL이라 http 로컬 프리뷰에서 CSP(https 전용)에 막혀 카카오맵을 로컬에서 테스트할 수 없다.
 - 백로그(우선순위 미확정): ① Firebase Auth 도입(유저 단위 규칙, 수익화 전제) ② 수익화(AdSense/TWA+AdMob/구독) ③ 개인화 추천 ④ Firestore 전환 보류.
 
 ## 2026-07-20 — 배포 게이트 재검증 (배포검증부)
