@@ -33,7 +33,7 @@ if ($status) {
         $msg = Read-Host "커밋 메시지"
         if (-not $msg.Trim()) { $msg = "chore: 머지 전 정리" }
         if ($current -ne "dev") { git checkout dev }
-        git add docs vercel.json
+        git add docs
         git commit -m $msg
         git push origin dev
     } else {

@@ -51,7 +51,7 @@ if (-not $msg.Trim()) {
 }
 
 # 스테이징 & 커밋
-git add docs vercel.json
+git add docs
 git commit -m $msg
 
 if ($LASTEXITCODE -ne 0) {

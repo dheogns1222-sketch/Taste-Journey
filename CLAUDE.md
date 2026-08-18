@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 개요
 
-커플용 맛집 투어 기록 PWA. 빌드 도구 없이 **단일 HTML 파일**(`docs/index.html`)로 모든 기능을 구현한다. Vercel이 `docs/` 폴더를 서빙한다 (`vercel.json` → `outputDirectory: docs`).
+커플용 맛집 투어 기록 PWA. 빌드 도구 없이 **단일 HTML 파일**(`docs/index.html`)로 모든 기능을 구현한다. Vercel이 `docs/` 폴더를 서빙한다 (Vercel 프로젝트 Root Directory = `docs` — 따라서 Vercel 설정 파일은 **`docs/vercel.json`**이며 레포 루트의 vercel.json은 읽히지 않는다, 2026-08-18 실측).
 
 ## 배포
 
@@ -32,8 +32,8 @@ APP_VER ≠ version.json이면 기존 사용자에게 상단 업데이트 배너
 
 - **로컬 브랜치**: `master` → **원격 브랜치**: `main` (Vercel이 `main` 감시)
 - `.git/index.lock` 충돌 시 PC에서 수동 삭제 후 push (`sandbox에서 rm 불가`)
-- PowerShell 배포 스크립트: `scripts/deploy/[배포]-master-push.ps1` (`docs/`+`vercel.json` 스테이징 → `origin master` + `origin master:main` 푸시). `dev` 브랜치 사용 시 `[데브]-dev-push.ps1` → `[배포]-dev-to-master-merge.ps1`. `src/`는 2026-08-18 폐기(정본은 `docs/`뿐, 잔재는 `99_ARCHIVE\Taste-Journey_구버전잔재_2026-08-18`).
-- 배포 헤더: `vercel.json`에 CSP·HSTS 등 보안 헤더 적용(2026-08-18). 외부 리소스(스크립트/CSS/폰트/API 호스트) 추가 시 CSP 허용 목록도 함께 갱신하고 `python scripts/dev/serve-with-headers.py`(= `.claude/launch.json` `taste-journey`)로 콘솔 CSP 위반 0건 확인 후 배포.
+- PowerShell 배포 스크립트: `scripts/deploy/[배포]-master-push.ps1` (`docs/` 스테이징 → `origin master` + `origin master:main` 푸시). `dev` 브랜치 사용 시 `[데브]-dev-push.ps1` → `[배포]-dev-to-master-merge.ps1`. `src/`는 2026-08-18 폐기(정본은 `docs/`뿐, 잔재는 `99_ARCHIVE\Taste-Journey_구버전잔재_2026-08-18`).
+- 배포 헤더: `docs/vercel.json`에 CSP·HSTS 등 보안 헤더 적용(2026-08-18). 외부 리소스(스크립트/CSS/폰트/API 호스트) 추가 시 CSP 허용 목록도 함께 갱신하고 `python scripts/dev/serve-with-headers.py`(= `.claude/launch.json` `taste-journey`)로 콘솔 CSP 위반 0건 확인 후 배포.
 
 ## 파일 수정 패턴
 

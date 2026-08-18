@@ -23,7 +23,7 @@ if (Test-Path $lock) { Remove-Item $lock -Force }
 Info "`n[1/5] 현재 변경사항 master에 커밋..."
 $status = git status --short
 if ($status) {
-    git add docs vercel.json
+    git add docs
     git commit -m "deploy: 15개 버그 수정 (회원가입/권한/UI/Firebase 연동 등)"
     git push origin master
     if ($LASTEXITCODE -eq 0) { Ok "master 커밋 완료" } else { Warn "master 푸시 실패 (계속 진행)" }
