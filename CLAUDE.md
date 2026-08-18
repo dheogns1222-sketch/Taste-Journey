@@ -2,7 +2,8 @@
 
 > **총괄PD 인수인계 머리 (2026-08-18 표준)** — 이 폴더에서 열린 세션은 「[개발] Taste Journey」 프로젝트의 작업 세션이다(마스터 역할 아님). 사장 지정 프로젝트명은 「[개발] Taste Journey」, 앱(ai-company-hq) 편입 id는 `taste-journey`(식별자일 뿐 이름 아님).
 > 1. 마스터 규칙: 상위 `F:\AI Company HQ\CLAUDE.md` + 전역 `~\.claude\CLAUDE.md`(모델 라우팅·토큰 절약).
-> 2. 인수인계 순서: 이 문서 → CLAUDE.md·배포 규칙(dev→master)·Firebase 규칙 잠금·두뇌 위키 프로젝트_Taste_Journey → 최근 WORKLOG → 필요 시 두뇌 위키. 첫 명령어 예: "인수인계 받아. 정본 읽고 현재 상태·다음 할 일 브리핑".
+> 2. 인수인계 순서: 이 문서(아래 「배포」·「절대 규칙」·「Firebase 규칙 상태」 절 포함) → `WORKLOG.md`(최신 상태·사장 지시·다음 할 일) → 두뇌 위키 `projects/프로젝트_Taste_Journey.md`(축적 지식) → 필요 시 `git log`. 배포는 `master → origin main`(Vercel) 직행이 정본이며 `dev` 브랜치 흐름은 현재 비사용(스크립트만 남아 있음). 첫 명령어 예: "인수인계 받아. 정본 읽고 현재 상태·다음 할 일 브리핑".
+> 2-1. **현재 상태(2026-08-18)**: 유지보수 모드, 라이브 v2.0.1, **사장 지시 = 재개 전까지 대기**. 재개 시 WORKLOG 최상단 항목부터.
 > 3. `.claude\skills`는 마스터 스킬 폴더의 정션 — 마스터 스킬 20종(kill-ai-slop·humanizer·korean-humanizer·grilling·guardrail-design·transparency-patterns·ui-ux-pro-max 등) 사용 가능. 진행 상태가 바뀌면 앱 `projects.yaml`의 `taste-journey` 항목·`00_MASTER\MASTER.md` 갱신, 결정·산출물은 두뇌 위키 INGEST.
 > 4. 결과물 한국어 · 완전 온라인/오프라인 어느 모드에서도 같은 이름·분류 · `D:\보안격리*`·지갑 시드 접근 금지.
 
@@ -71,6 +72,7 @@ cp /tmp/work.html docs/index.html
 - **localStorage** (`tj2_` prefix): `users`, `places`, `invite_codes`, `kakao_rest_key`, `kakao_js_key`, `fb_url`, `fb_secret`
 - **Firebase RTDB**: `/tj.json` (메인 데이터), `/tj_bak/{YYYY-MM-DD}.json` (자동 일별 백업)
 - Firebase 보안: `FB.secret`(= `fb_secret`)을 `?auth=SECRET` 쿼리로 모든 REST 호출에 첨부
+- **Firebase 규칙 상태**: RTDB 규칙 `.read: false / .write: false` **완전 잠금(2026-07 적용 확인)**. Secret은 규칙을 우회하므로 앱은 정상 동작. 규칙을 열지 말 것 — 유저 단위 규칙이 필요해지면 백로그 ① Firebase Auth 도입으로 처리.
 
 ### 데이터 구조
 

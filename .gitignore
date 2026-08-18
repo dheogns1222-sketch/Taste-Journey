@@ -78,3 +78,7 @@ temp/
 .netlify
 coverage/
 .nyc_output/
+
+# Claude Code 로컬 설정 — skills 는 마스터 폴더 정션(커밋 금지), launch.json 만 추적
+.claude/*
+!.claude/launch.json
