@@ -4,7 +4,7 @@
 # 실행: 이 파일 우클릭 → "PowerShell로 실행"
 # ================================================================
 
-$ROOT = "D:\Clode\Projects\Taste Journey"
+$ROOT = "F:\AI Company HQ\03_PROJECTS\[개발] Taste Journey"
 Set-Location $ROOT
 
 function Info  { param($m) Write-Host $m -ForegroundColor Cyan }
@@ -56,7 +56,7 @@ if (-not $msg.Trim()) {
 }
 
 # 스테이징 & 커밋
-git add src/index.html docs/index.html
+git add docs vercel.json
 git commit -m $msg
 
 if ($LASTEXITCODE -ne 0) { Fail "커밋 실패"; Read-Host; exit 1 }

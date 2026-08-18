@@ -1,10 +1,10 @@
 # ================================================================
 # Taste Journey — [배포] 라이브 배포 스크립트
-# master 브랜치 → Netlify 자동 배포
+# master 브랜치 → origin main 푸시 → Vercel 자동 배포 (정식 배포처)
 # 실행: 이 파일 우클릭 → "PowerShell로 실행"
 # ================================================================
 
-$ROOT = "D:\Clode\Projects\Taste Journey"
+$ROOT = "F:\AI Company HQ\03_PROJECTS\[개발] Taste Journey"
 Set-Location $ROOT
 
 # 색상 헬퍼
@@ -51,7 +51,7 @@ if (-not $msg.Trim()) {
 }
 
 # 스테이징 & 커밋
-git add src/index.html docs/index.html
+git add docs vercel.json
 git commit -m $msg
 
 if ($LASTEXITCODE -ne 0) {
@@ -63,11 +63,12 @@ if ($LASTEXITCODE -ne 0) {
 # master 푸시
 Info "`nmaster → origin 푸시 중..."
 git push origin master
+git push origin master:main
 
 if ($LASTEXITCODE -eq 0) {
     Ok "`n=========================================="
     Ok "  배포 완료!"
-    Ok "  Netlify: https://prismatic-marzipan-0081c6.netlify.app"
+    Ok "  Vercel: https://taste-journey-iota.vercel.app"
     Ok "  (1~2분 후 반영됩니다)"
     Ok "=========================================="
 } else {

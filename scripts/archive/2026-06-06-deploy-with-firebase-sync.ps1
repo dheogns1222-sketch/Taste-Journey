@@ -1,7 +1,7 @@
 # Taste Journey - Firebase 동기화 + GitHub Pages 배포
 # 실행: PowerShell에서 이 파일 우클릭 → "PowerShell로 실행"
 
-Set-Location "D:\Clode\Projects\Taste Journey"
+Set-Location "F:\AI Company HQ\03_PROJECTS\[개발] Taste Journey"
 
 # index.lock 삭제
 $lock = ".git\index.lock"

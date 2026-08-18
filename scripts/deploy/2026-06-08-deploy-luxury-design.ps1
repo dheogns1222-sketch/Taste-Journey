@@ -1,4 +1,4 @@
-Set-Location "D:\Clode\Projects\Taste Journey"
+Set-Location "F:\AI Company HQ\03_PROJECTS\[개발] Taste Journey"
 
 # Git 락 파일 제거 (이전 프로세스 잔여물)
 if (Test-Path ".git\index.lock") { Remove-Item ".git\index.lock" -Force }

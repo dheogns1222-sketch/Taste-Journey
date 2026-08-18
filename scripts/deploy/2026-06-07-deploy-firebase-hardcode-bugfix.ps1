@@ -3,7 +3,7 @@
 # 실행: 이 파일 우클릭 → "PowerShell로 실행"
 # ================================================================
 
-$ROOT = "D:\Clode\Projects\Taste Journey"
+$ROOT = "F:\AI Company HQ\03_PROJECTS\[개발] Taste Journey"
 Set-Location $ROOT
 
 $lock = ".git\index.lock"

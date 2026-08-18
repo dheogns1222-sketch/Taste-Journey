@@ -2,7 +2,7 @@
 # 우클릭 -> PowerShell로 실행
 
 $ErrorActionPreference = "Stop"
-$ROOT = "D:\Clode\Projects\Taste Journey"
+$ROOT = "F:\AI Company HQ\03_PROJECTS\[개발] Taste Journey"
 Set-Location $ROOT
 
 Write-Host "패치 시작..." -ForegroundColor Cyan
@@ -14,7 +14,7 @@ if (Test-Path $lock) { Remove-Item $lock -Force }
 $py = @'
 import sys, re
 
-path = r"D:\Clode\Projects\Taste Journey\src\index.html"
+path = r"F:\AI Company HQ\03_PROJECTS\[개발] Taste Journey\src\index.html"
 with open(path, "r", encoding="utf-8") as f:
     s = f.read()
 

@@ -1,7 +1,7 @@
 # Taste Journey - 계정/권한 시스템 개편 배포
 # 실행: PowerShell에서 이 파일 우클릭 → "PowerShell로 실행"
 
-Set-Location "D:\Clode\Projects\Taste Journey"
+Set-Location "F:\AI Company HQ\03_PROJECTS\[개발] Taste Journey"
 
 $lock = ".git\index.lock"
 if (Test-Path $lock) { Remove-Item $lock -Force; Write-Host "index.lock 삭제 완료" }

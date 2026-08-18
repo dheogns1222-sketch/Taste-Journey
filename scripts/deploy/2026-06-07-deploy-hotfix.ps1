@@ -1,7 +1,7 @@
 # Taste Journey - 핫픽스 배포
 # 우클릭 -> PowerShell로 실행
 
-Set-Location "D:\Clode\Projects\Taste Journey"
+Set-Location "F:\AI Company HQ\03_PROJECTS\[개발] Taste Journey"
 
 $lock = ".git\index.lock"
 if (Test-Path $lock) { Remove-Item $lock -Force }

@@ -4,7 +4,7 @@
 # 실행: 이 파일 우클릭 → "PowerShell로 실행"
 # ================================================================
 
-$ROOT = "D:\Clode\Projects\Taste Journey"
+$ROOT = "F:\AI Company HQ\03_PROJECTS\[개발] Taste Journey"
 Set-Location $ROOT
 
 function Info  { param($m) Write-Host $m -ForegroundColor Cyan }
@@ -23,7 +23,7 @@ if (Test-Path $lock) { Remove-Item $lock -Force }
 Info "`n[1/5] 현재 변경사항 master에 커밋..."
 $status = git status --short
 if ($status) {
-    git add src/index.html docs/index.html
+    git add docs vercel.json
     git commit -m "deploy: 15개 버그 수정 (회원가입/권한/UI/Firebase 연동 등)"
     git push origin master
     if ($LASTEXITCODE -eq 0) { Ok "master 커밋 완료" } else { Warn "master 푸시 실패 (계속 진행)" }
@@ -58,7 +58,7 @@ Ok "`n=========================================="
 Ok "  초기 설정 완료!"
 Ok ""
 Ok "  브랜치 구조:"
-Ok "  master → Netlify 라이브 배포"
+Ok "  master → origin main → Vercel 라이브 배포"
 Ok "  dev    → 개발/테스트 환경"
 Ok ""
 Ok "  앞으로 개발 흐름:"

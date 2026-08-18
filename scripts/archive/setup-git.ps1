@@ -1,7 +1,7 @@
 # Taste Journey - Git Setup Script (Clean Install)
 
 $ErrorActionPreference = "Continue"
-$folder = "D:\Clode\Projects\Taste Journey"
+$folder = "F:\AI Company HQ\03_PROJECTS\[개발] Taste Journey"
 $remote = "https://github.com/dheogns1222-sketch/Taste-Journey.git"
 
 Set-Location $folder
